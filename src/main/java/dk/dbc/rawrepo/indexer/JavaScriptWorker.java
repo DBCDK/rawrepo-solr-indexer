@@ -1,23 +1,8 @@
 /*
- * dk.dbc-rawrepo-solr-indexer
- * Copyright (C) 2015 Dansk Bibliotekscenter a/s, Tempovej 7-11, DK-2750 Ballerup,
- * Denmark. CVR: 15149043*
- *
- * This file is part of dk.dbc-rawrepo-solr-indexer.
- *
- * dk.dbc-rawrepo-solr-indexer is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * dk.dbc-rawrepo-solr-indexer is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with dk.dbc-rawrepo-solr-indexer.  If not, see <http://www.gnu.org/licenses/>.
+ * Copyright Dansk Bibliotekscenter a/s. Licensed under GNU GPL v3
+ *  See license text at https://opensource.dbc.dk/licenses/gpl-3.0
  */
+
 package dk.dbc.rawrepo.indexer;
 
 import dk.dbc.jslib.ClasspathSchemeHandler;
@@ -33,7 +18,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 /**
- *
  * @author DBC {@literal <dk.dbc.dk>}
  */
 public class JavaScriptWorker {
@@ -48,18 +32,18 @@ public class JavaScriptWorker {
      * Std search path
      */
     private static final String[] searchPaths = new String[]{
-        "classpath:javascript/",
-        "classpath:javascript/javacore/",
-        "classpath:javascript/jscommon/config/",
-        "classpath:javascript/jscommon/convert/",
-        "classpath:javascript/jscommon/devel/",
-        "classpath:javascript/jscommon/external/",
-        "classpath:javascript/jscommon/io/",
-        "classpath:javascript/jscommon/marc/",
-        "classpath:javascript/jscommon/net/",
-        "classpath:javascript/jscommon/system/",
-        "classpath:javascript/jscommon/util/",
-        "classpath:javascript/jscommon/xml/"
+            "classpath:javascript/",
+            "classpath:javascript/javacore/",
+            "classpath:javascript/jscommon/config/",
+            "classpath:javascript/jscommon/convert/",
+            "classpath:javascript/jscommon/devel/",
+            "classpath:javascript/jscommon/external/",
+            "classpath:javascript/jscommon/io/",
+            "classpath:javascript/jscommon/marc/",
+            "classpath:javascript/jscommon/net/",
+            "classpath:javascript/jscommon/system/",
+            "classpath:javascript/jscommon/util/",
+            "classpath:javascript/jscommon/xml/"
     };
 
     private final Environment internal_indexes_env;
@@ -83,7 +67,7 @@ public class JavaScriptWorker {
             for (String searchPath : searchPaths) {
                 mh.addSearchPath(new SchemeURI(searchPath));
             }
-    //      mh.registerHandler("file", new FileSchemeHandler(root)); // Don'tuse filesystem
+            //      mh.registerHandler("file", new FileSchemeHandler(root)); // Don'tuse filesystem
 
             // Use system
             internal_indexes_env.registerUseFunction(mh);
@@ -92,7 +76,7 @@ public class JavaScriptWorker {
             // Evaluate script
             InputStream stream = getClass().getClassLoader().getResourceAsStream(INDEXER_SCRIPT);
             InputStreamReader inputStreamReader = new InputStreamReader(stream, StandardCharsets.UTF_8);
-        
+
             internal_indexes_env.eval(inputStreamReader, INDEXER_SCRIPT);
 
             InputStream stream1 = getClass().getClassLoader().getResourceAsStream(DBC_INDEXER_SCRIPT);

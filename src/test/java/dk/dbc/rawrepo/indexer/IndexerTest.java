@@ -150,9 +150,6 @@ public class IndexerTest {
     private static Indexer createInstance() {
         @SuppressWarnings("UseInjectionInsteadOfInstantion")
         Indexer indexer = new Indexer();
-        indexer.contentsIndexed = new Counter();
-        indexer.contentsSkipped = new Counter();
-        indexer.contentsFailed = new Counter();
         return indexer;
     }
 
@@ -286,7 +283,6 @@ public class IndexerTest {
         Record record = new MockRecord("id", 123456, content.getBytes(), created, modified, true, MarcXChangeMimeType.MARCXCHANGE);
 
         Indexer indexer = createInstance();
-        indexer.createIndexDocumentTimer = new Timer();
         indexer.worker = new JavaScriptWorker();
 
         SolrInputDocument doc = indexer.createIndexDocument(record);
@@ -318,7 +314,6 @@ public class IndexerTest {
         Record record = new MockRecord("id", 123456, content.getBytes(), created, modified, true, MarcXChangeMimeType.MARCXCHANGE);
 
         Indexer indexer = createInstance();
-        indexer.createIndexDocumentTimer = new Timer();
         indexer.worker = new JavaScriptWorker();
 
         SolrInputDocument doc = indexer.createIndexDocument(record);
@@ -345,7 +340,6 @@ public class IndexerTest {
         Record record = new MockRecord("id", 123456, content.getBytes(), created, modified, true, "DUMMY");
 
         Indexer indexer = createInstance();
-        indexer.createIndexDocumentTimer = new Timer();
         indexer.worker = new JavaScriptWorker();
 
         SolrInputDocument doc = indexer.createIndexDocument(record);

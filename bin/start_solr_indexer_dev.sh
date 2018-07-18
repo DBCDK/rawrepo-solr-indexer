@@ -4,8 +4,8 @@ set -x
 # Console output can be seen with docker logs -f <container_ID>.
 # If no version is specified, a new image will be build tagged as ${USER}
 USER=${USER:-WHAT}    # silencing annoying intellij syntax quibble
-SOLR_HOST=${SOLR_HOST:-WHAT}
-SOLR_PORT=${SOLR_PORT:-WHAT}
+SOLR_HOST_UPDATE=${SOLR_HOST_UPDATE:-WHAT}
+SOLR_PORT_UPDATE=${SOLR_PORT_UPDATE:-WHAT}
 
 package=solr-indexer
 cid_file=solr-indexer.cid
@@ -52,13 +52,13 @@ then
     docker stop `cat ${HOME}/.ocb-tools/${cid_file}`
 fi
 
-if [ -f ${HOME}/.ocb-tools/SOLR_HOST ]
+if [ -f ${HOME}/.ocb-tools/SOLR_HOST_UPDATE ]
 then
-    SOLR_HOST=`cat ${HOME}/.ocb-tools/SOLR_HOST`
+    SOLR_HOST_UPDATE=`cat ${HOME}/.ocb-tools/SOLR_HOST_UPDATE`
 fi
-if [ -f ${HOME}/.ocb-tools/SOLR_PORT ]
+if [ -f ${HOME}/.ocb-tools/SOLR_PORT_UPDATE ]
 then
-    SOLR_PORT=`cat ${HOME}/.ocb-tools/SOLR_PORT`
+    SOLR_PORT_UPDATE=`cat ${HOME}/.ocb-tools/SOLR_PORT_UPDATE`
 fi
 
 rr_conn=`egrep rawrepo.jdbc.conn.url ${HOME}/.ocb-tools/testrun.properties | tr -d " " | cut -d"/" -f3-`
@@ -67,12 +67,12 @@ rr_pass=`egrep rawrepo.jdbc.conn.passwd ${HOME}/.ocb-tools/testrun.properties | 
 record_url=`grep recordservice.url ${HOME}/.ocb-tools/testrun.properties | cut -d"=" -f2 | tr -d " "`
 echo "Starting container"
 container_id=`docker run -it ${detached} -p ${port}:8080 \
-		-e RAWREPO_URL="${rr_user}:${rr_pass}@${rr_conn}" \
+		-e RAWREPO_URL="${rr_user} ${rr_user}:${rr_pass}@${rr_conn}" \
 		-e MAX_CONCURRENT=1 \
 		-e TIMEOUT=10 \
-		-e SOLR_URL=http://${SOLR_HOST}:${SOLR_PORT}/solr/rawrepo\
+		-e SOLR_URL=http://${SOLR_HOST_UPDATE}:${SOLR_PORT_UPDATE}/solr/rawrepo\
 		-e OPENAGENCY_URL=http://openagency.addi.dk/2.33/ \
-		-e WORKER_NAME=socl-sync\
+		-e WORKER=socl-sync \
 		-e RAWREPO_RECORD_URL="${record_url}" \
 		${docker_image}:${version}`
 cc=$?

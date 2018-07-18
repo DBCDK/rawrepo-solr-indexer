@@ -82,7 +82,7 @@ public class IndexerIT {
         connection.close();
     }
 
-    void resetDatabase() throws SQLException {
+    private void resetDatabase() throws SQLException {
         connection.prepareStatement("DELETE FROM relations").execute();
         connection.prepareStatement("DELETE FROM records").execute();
         connection.prepareStatement("DELETE FROM queue").execute();
@@ -111,13 +111,12 @@ public class IndexerIT {
         indexer.mergerPool = new MergerPool();
         PGSimpleDataSource dataSource = new PGSimpleDataSource();
         dataSource.setUrl(jdbcUrl);
-        indexer.dataSource = dataSource;
+        indexer.rawrepoDataSource = dataSource;
         indexer.openAgencyUrl = "http://openagency.addi.dk/2.33/";
 
 
-        indexer.solrUrl = solrUrl;
-        indexer.workerName = WORKER;
-        indexer.registry = new MetricsRegistry();
+        indexer.SOLR_URL = solrUrl;
+        indexer.WORKER = WORKER;
         indexer.create();
         return indexer;
     }

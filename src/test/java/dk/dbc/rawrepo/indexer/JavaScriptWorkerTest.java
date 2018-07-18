@@ -86,9 +86,8 @@ public class JavaScriptWorkerTest {
 
            @Override
            public boolean accept(File file) {
-               return file.isDirectory() &&
-                      // file.getName().equals("y08") &&
-                      true;
+               // file.getName().equals("y08") &&
+               return file.isDirectory();
            }
        });
         for (File dir : dirs) {
