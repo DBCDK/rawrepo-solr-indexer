@@ -1,23 +1,8 @@
 /*
- * dbc-rawrepo-solr-indexer
- * Copyright (C) 2015 Dansk Bibliotekscenter a/s, Tempovej 7-11, DK-2750 Ballerup,
- * Denmark. CVR: 15149043*
- *
- * This file is part of dbc-rawrepo-solr-indexer.
- *
- * dbc-rawrepo-solr-indexer is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * dbc-rawrepo-solr-indexer is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with dbc-rawrepo-solr-indexer.  If not, see <http://www.gnu.org/licenses/>.
+ * Copyright Dansk Bibliotekscenter a/s. Licensed under GNU GPL v3
+ *  See license text at https://opensource.dbc.dk/licenses/gpl-3.0
  */
+
 package dk.dbc.rawrepo.indexer;
 
 import org.apache.solr.common.SolrInputDocument;
@@ -26,8 +11,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.ext.XLogger;
+import org.slf4j.ext.XLoggerFactory;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -46,20 +31,18 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
 /**
- *
  * @author DBC {@literal <dbc.dk>}
  */
 @RunWith(Parameterized.class)
 public class JavaScriptWorkerTest {
 
-    private static final Logger log = LoggerFactory.getLogger(JavaScriptWorkerTest.class);
+    private static final XLogger LOGGER = XLoggerFactory.getXLogger(JavaScriptWorkerTest.class);
 
     private final String dir;
     private final File path;
@@ -84,14 +67,13 @@ public class JavaScriptWorkerTest {
         }
         File[] dirs = file.listFiles(new FileFilter() {
 
-           @Override
-           public boolean accept(File file) {
-               // file.getName().equals("y08") &&
-               return file.isDirectory();
-           }
-       });
+            @Override
+            public boolean accept(File file) {
+                return file.isDirectory();
+            }
+        });
         for (File dir : dirs) {
-            list.add(new String[] {dir.getName(), dir.getPath()});
+            list.add(new String[]{dir.getName(), dir.getPath()});
         }
         return list;
     }
@@ -122,13 +104,13 @@ public class JavaScriptWorkerTest {
                 HashSet<String> more = new HashSet<>();
                 missing.put(key, more);
                 JsonArray array = obj.getJsonArray(key);
-                for (int i = 0 ; i < array.size() ; i++) {
+                for (int i = 0; i < array.size(); i++) {
                     more.add(array.getString(i));
                 }
             } else {
                 HashSet<String> more = new HashSet<>();
                 JsonArray array = obj.getJsonArray(key);
-                for (int i = 0 ; i < array.size() ; i++) {
+                for (int i = 0; i < array.size(); i++) {
                     String string = array.getString(i);
                     if (!set.remove(string)) {
                         more.add(string);
@@ -168,12 +150,8 @@ public class JavaScriptWorkerTest {
                 Object[] arguments = invocation.getArguments();
                 String name = (String) arguments[0];
                 String value = (String) arguments[1];
-                log.debug("mock: name = " + name + "; value = " + value);
-                HashSet<String> set = collection.get(name);
-                if (set == null) {
-                    set = new HashSet<>();
-                    collection.put(name, set);
-                }
+                LOGGER.debug("mock: name = " + name + "; value = " + value);
+                HashSet<String> set = collection.computeIfAbsent(name, k -> new HashSet<>());
                 set.add(value);
                 return null;
             }

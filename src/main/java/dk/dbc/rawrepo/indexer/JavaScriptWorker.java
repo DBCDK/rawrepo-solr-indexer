@@ -25,8 +25,6 @@ public class JavaScriptWorker {
     private static final Logger log = LoggerFactory.getLogger(JavaScriptWorker.class);
     private static final String INDEXER_SCRIPT = "indexer.js";
     private static final String INDEXER_METHOD = "index";
-    private static final String DBC_INDEXER_SCRIPT = "dbc_indexer.js";
-    private static final String DBC_INDEXER_METHOD = "dbc_index";
 
     /**
      * Std search path
@@ -47,12 +45,10 @@ public class JavaScriptWorker {
     };
 
     private final Environment internal_indexes_env;
-    private final Environment dbc_indexes_env;
 
     public JavaScriptWorker() {
         try {
             internal_indexes_env = new Environment();
-            dbc_indexes_env = new Environment();
             ModuleHandler mh = new ModuleHandler();
             mh.registerNonCompilableModule("Tables"); // Unlikely we need this module.
 
@@ -67,23 +63,15 @@ public class JavaScriptWorker {
             for (String searchPath : searchPaths) {
                 mh.addSearchPath(new SchemeURI(searchPath));
             }
-            //      mh.registerHandler("file", new FileSchemeHandler(root)); // Don'tuse filesystem
 
             // Use system
             internal_indexes_env.registerUseFunction(mh);
-            dbc_indexes_env.registerUseFunction(mh);
 
             // Evaluate script
             InputStream stream = getClass().getClassLoader().getResourceAsStream(INDEXER_SCRIPT);
             InputStreamReader inputStreamReader = new InputStreamReader(stream, StandardCharsets.UTF_8);
 
             internal_indexes_env.eval(inputStreamReader, INDEXER_SCRIPT);
-
-            InputStream stream1 = getClass().getClassLoader().getResourceAsStream(DBC_INDEXER_SCRIPT);
-            InputStreamReader inputStreamReader1 = new InputStreamReader(stream1, StandardCharsets.UTF_8);
-
-            dbc_indexes_env.eval(inputStreamReader1, DBC_INDEXER_SCRIPT);
-
         } catch (Exception ex) {
             log.error("Error initializing javascript", ex);
             throw new RuntimeException("Cannot initlialize javascript", ex);
@@ -118,7 +106,5 @@ public class JavaScriptWorker {
         this.solrInputDocument = solrInputDocument;
 
         internal_indexes_env.callMethod(INDEXER_METHOD, new Object[]{content, mimetype});
-        // DO NOT ACTIVATE THIS - IT WILL BE MERGED IN FROM THE INDEX_DEVELOPMENT BRANCH WHEN THAT IS READY dbc_indexes_env.callMethod(DBC_INDEXER_METHOD, new Object[]{content, mimetype});
     }
-
 }

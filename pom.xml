@@ -26,14 +26,10 @@
         <metrics-core.version>3.0.2</metrics-core.version>
         <postgresql.version>9.3-1101-jdbc41</postgresql.version>
         <microprofile.version>1.2</microprofile.version>
+        <serviceutils.version>0.1-SNAPSHOT</serviceutils.version>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>rawrepo-access</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <dependency>
             <artifactId>solr-solrj</artifactId>
             <groupId>org.apache.solr</groupId>
@@ -52,6 +48,16 @@
             <groupId>dk.dbc</groupId>
             <artifactId>stopwatch</artifactId>
             <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>dk.dbc</groupId>
+            <artifactId>rawrepo-queue-dao</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>dk.dbc</groupId>
+            <artifactId>serviceutils</artifactId>
+            <version>${serviceutils.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-logging</groupId>
@@ -121,6 +127,11 @@
             <artifactId>microprofile-config-api</artifactId>
             <version>${microprofile.version}</version> <!-- version 1.2 available since Payara v4.1.2.181 -->
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-mapper-asl</artifactId>
+            <version>1.9.13</version>
         </dependency>
     </dependencies>
 

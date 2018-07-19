@@ -1,22 +1,6 @@
 /*
- * dk.dbc-rawrepo-solr-indexer
- * Copyright (C) 2015 Dansk Bibliotekscenter a/s, Tempovej 7-11, DK-2750 Ballerup,
- * Denmark. CVR: 15149043*
- *
- * This file is part of dk.dbc-rawrepo-solr-indexer.
- *
- * dk.dbc-rawrepo-solr-indexer is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * dk.dbc-rawrepo-solr-indexer is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with dk.dbc-rawrepo-solr-indexer.  If not, see <http://www.gnu.org/licenses/>.
+ * Copyright Dansk Bibliotekscenter a/s. Licensed under GNU GPL v3
+ *  See license text at https://opensource.dbc.dk/licenses/gpl-3.0
  */
 
 /* global __SolrFields */
@@ -25,7 +9,7 @@
  * exports SolrFields with method:
  * SolrFields.addSolrField
  *
- * global variable __SolrFields contains target objecct, that implements void addField(String, String)
+ * global variable __SolrFields contains target object, that implements void addField(String, String)
  */
 EXPORTED_SYMBOLS = ['solrField'];
 

@@ -71,7 +71,6 @@ container_id=`docker run -it ${detached} -p ${port}:8080 \
 		-e MAX_CONCURRENT=1 \
 		-e TIMEOUT=10 \
 		-e SOLR_URL=http://${SOLR_HOST_UPDATE}:${SOLR_PORT_UPDATE}/solr/rawrepo\
-		-e OPENAGENCY_URL=http://openagency.addi.dk/2.33/ \
 		-e WORKER=socl-sync \
 		-e RAWREPO_RECORD_URL="${record_url}" \
 		${docker_image}:${version}`
