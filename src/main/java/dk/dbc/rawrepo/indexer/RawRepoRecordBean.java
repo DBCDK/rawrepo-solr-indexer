@@ -26,7 +26,7 @@ import javax.ws.rs.core.MediaType;
 public class RawRepoRecordBean {
     private static final XLogger LOGGER = XLoggerFactory.getXLogger(RawRepoRecordBean.class);
 
-    private final String URL_RECORD = "%s/api/v1/record/%s/%s/meta?allow-deleted=true";
+    private final String URL_RECORD = "%s/api/v1/record/%s/%s?allow-deleted=true";
     private final String URL_RECORD_EXISTS = "%s/api/v1/record/%s/%s/exists?mode=merged&allow-deleted=true";
 
     @Inject
