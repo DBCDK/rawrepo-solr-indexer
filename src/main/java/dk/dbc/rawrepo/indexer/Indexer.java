@@ -65,8 +65,6 @@ public class Indexer {
     @EJB
     private RawRepoRecordBean recordBean;
 
-    private final ObjectMapper mapper = new ObjectMapper();
-
     static final String MIMETYPE_MARCXCHANGE = "text/marcxchange";
     static final String MIMETYPE_ENRICHMENT = "text/enrichment+marcxchange";
     static final String MIMETYPE_ARTICLE = "text/article+marcxchange";
