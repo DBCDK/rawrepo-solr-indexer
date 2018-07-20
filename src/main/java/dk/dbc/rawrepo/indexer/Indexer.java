@@ -19,7 +19,6 @@ import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrInputDocument;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.MDC;
 import org.slf4j.ext.XLogger;
@@ -45,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 public class Indexer {
     private static final XLogger LOGGER = XLoggerFactory.getXLogger(Indexer.class);
 
-    private  static final String TRACKING_ID = "trackingId";
+    private static final String TRACKING_ID = "trackingId";
 
     @Inject
     @ConfigProperty(name = "SOLR_URL", defaultValue = "SOLR_URL not set")
