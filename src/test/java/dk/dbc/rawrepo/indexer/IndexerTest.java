@@ -44,7 +44,10 @@ public class IndexerTest {
                                       boolean deleted,
                                       String mimetype) {
 
-        RecordIdDTO recordIdDTO = new RecordIdDTO(bibliographicRecordId, agencyId);
+        RecordIdDTO recordIdDTO = new RecordIdDTO();
+        recordIdDTO.setBibliographicRecordId(bibliographicRecordId);
+        recordIdDTO.setAgencyId(agencyId);
+
         RecordDTO recordDTO = new RecordDTO();
         recordDTO.setRecordId(recordIdDTO);
         recordDTO.setContent(content);

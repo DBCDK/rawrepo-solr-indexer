@@ -10,10 +10,6 @@ public class RecordDTO {
     private String trackingId;
     private byte[] content;
 
-    public RecordDTO() {
-
-    }
-
     public RecordIdDTO getRecordId() {
         return recordId;
     }
@@ -69,6 +65,5 @@ public class RecordDTO {
     public void setContent(byte[] content) {
         this.content = content;
     }
-
 
 }

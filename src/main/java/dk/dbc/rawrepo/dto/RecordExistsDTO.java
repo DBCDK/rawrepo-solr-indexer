@@ -4,9 +4,6 @@ public class RecordExistsDTO {
 
     private boolean value;
 
-    public RecordExistsDTO() {
-    }
-
     public boolean isValue() {
         return value;
     }
