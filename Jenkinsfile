@@ -83,8 +83,20 @@ pipeline {
             }
             steps {
                 script {
-                    def image = docker.build("docker-io.dbc.dk/rawrepo-solr-indexer-updateservice:${DOCKER_IMAGE_VERSION}")
+                    def image = docker.build("docker-io.dbc.dk/rawrepo-solr-indexer-updateservice:${DOCKER_IMAGE_VERSION}",
+                                                " --label jobname=${env.JOB_NAME}" +
+                                                " --label gitcommit=${env.GIT_COMMIT}" +
+                                                " --label buildnumber=${env.BUILD_NUMBER}" +
+                                                " --label user=isworker" +
+                                                " .")
                     image.push()
+
+                    if (env.BRANCH_NAME == 'develop') {
+                        sh """
+                            docker tag docker-io.dbc.dk/rawrepo-solr-indexer-updateservice:${DOCKER_IMAGE_VERSION} docker-i.dbc.dk/update-postgres:${DOCKER_IMAGE_DIT_VERSION}
+                            docker push docker-i.dbc.dk/update-postgres:${DOCKER_IMAGE_DIT_VERSION}
+                        """
+                    }
                 }
             }
         }
