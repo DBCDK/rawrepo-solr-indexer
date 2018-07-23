@@ -111,8 +111,6 @@ pipeline {
                 script {
                     lock('meta-rawrepo-solr-indexer-updateservice-deploy-staging') {
                         echo "Deploy not yet working so skip"
-                        #deploy("basismig")
-                        #deploy("fbstest")
                     }
                 }
             }
@@ -128,8 +126,6 @@ pipeline {
                 script {
                     lock('meta-rawrepo-solr-indexer-updateservice-deploy-prod') {
                         echo "Deploy not yet working so skip"
-                        #deploy("boblebad")
-                        #deploy("cisterne")
                     }
                 }
             }
