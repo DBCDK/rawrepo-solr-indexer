@@ -1,23 +1,8 @@
 /*
- * dk.dbc-rawrepo-solr-indexer
- * Copyright (C) 2015 Dansk Bibliotekscenter a/s, Tempovej 7-11, DK-2750 Ballerup,
- * Denmark. CVR: 15149043*
- *
- * This file is part of dk.dbc-rawrepo-solr-indexer.
- *
- * dk.dbc-rawrepo-solr-indexer is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * dk.dbc-rawrepo-solr-indexer is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with dk.dbc-rawrepo-solr-indexer.  If not, see <http://www.gnu.org/licenses/>.
+ * Copyright Dansk Bibliotekscenter a/s. Licensed under GNU GPL v3
+ *  See license text at https://opensource.dbc.dk/licenses/gpl-3.0
  */
+
 package dk.dbc.rawrepo.indexer;
 
 import dk.dbc.jslib.ClasspathSchemeHandler;
@@ -33,7 +18,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 /**
- *
  * @author DBC {@literal <dk.dbc.dk>}
  */
 public class JavaScriptWorker {
@@ -41,34 +25,30 @@ public class JavaScriptWorker {
     private static final Logger log = LoggerFactory.getLogger(JavaScriptWorker.class);
     private static final String INDEXER_SCRIPT = "indexer.js";
     private static final String INDEXER_METHOD = "index";
-    private static final String DBC_INDEXER_SCRIPT = "dbc_indexer.js";
-    private static final String DBC_INDEXER_METHOD = "dbc_index";
 
     /**
      * Std search path
      */
     private static final String[] searchPaths = new String[]{
-        "classpath:javascript/",
-        "classpath:javascript/javacore/",
-        "classpath:javascript/jscommon/config/",
-        "classpath:javascript/jscommon/convert/",
-        "classpath:javascript/jscommon/devel/",
-        "classpath:javascript/jscommon/external/",
-        "classpath:javascript/jscommon/io/",
-        "classpath:javascript/jscommon/marc/",
-        "classpath:javascript/jscommon/net/",
-        "classpath:javascript/jscommon/system/",
-        "classpath:javascript/jscommon/util/",
-        "classpath:javascript/jscommon/xml/"
+            "classpath:javascript/",
+            "classpath:javascript/javacore/",
+            "classpath:javascript/jscommon/config/",
+            "classpath:javascript/jscommon/convert/",
+            "classpath:javascript/jscommon/devel/",
+            "classpath:javascript/jscommon/external/",
+            "classpath:javascript/jscommon/io/",
+            "classpath:javascript/jscommon/marc/",
+            "classpath:javascript/jscommon/net/",
+            "classpath:javascript/jscommon/system/",
+            "classpath:javascript/jscommon/util/",
+            "classpath:javascript/jscommon/xml/"
     };
 
     private final Environment internal_indexes_env;
-    private final Environment dbc_indexes_env;
 
     public JavaScriptWorker() {
         try {
             internal_indexes_env = new Environment();
-            dbc_indexes_env = new Environment();
             ModuleHandler mh = new ModuleHandler();
             mh.registerNonCompilableModule("Tables"); // Unlikely we need this module.
 
@@ -83,23 +63,15 @@ public class JavaScriptWorker {
             for (String searchPath : searchPaths) {
                 mh.addSearchPath(new SchemeURI(searchPath));
             }
-    //      mh.registerHandler("file", new FileSchemeHandler(root)); // Don'tuse filesystem
 
             // Use system
             internal_indexes_env.registerUseFunction(mh);
-            dbc_indexes_env.registerUseFunction(mh);
 
             // Evaluate script
             InputStream stream = getClass().getClassLoader().getResourceAsStream(INDEXER_SCRIPT);
             InputStreamReader inputStreamReader = new InputStreamReader(stream, StandardCharsets.UTF_8);
-        
+
             internal_indexes_env.eval(inputStreamReader, INDEXER_SCRIPT);
-
-            InputStream stream1 = getClass().getClassLoader().getResourceAsStream(DBC_INDEXER_SCRIPT);
-            InputStreamReader inputStreamReader1 = new InputStreamReader(stream1, StandardCharsets.UTF_8);
-
-            dbc_indexes_env.eval(inputStreamReader1, DBC_INDEXER_SCRIPT);
-
         } catch (Exception ex) {
             log.error("Error initializing javascript", ex);
             throw new RuntimeException("Cannot initlialize javascript", ex);
@@ -134,7 +106,5 @@ public class JavaScriptWorker {
         this.solrInputDocument = solrInputDocument;
 
         internal_indexes_env.callMethod(INDEXER_METHOD, new Object[]{content, mimetype});
-        // DO NOT ACTIVATE THIS - IT WILL BE MERGED IN FROM THE INDEX_DEVELOPMENT BRANCH WHEN THAT IS READY dbc_indexes_env.callMethod(DBC_INDEXER_METHOD, new Object[]{content, mimetype});
     }
-
 }

@@ -1,59 +1,36 @@
 /*
- * dk.dbc-rawrepo-solr-indexer
- * Copyright (C) 2015 Dansk Bibliotekscenter a/s, Tempovej 7-11, DK-2750 Ballerup,
- * Denmark. CVR: 15149043*
- *
- * This file is part of dk.dbc-rawrepo-solr-indexer.
- *
- * dk.dbc-rawrepo-solr-indexer is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * dk.dbc-rawrepo-solr-indexer is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with dk.dbc-rawrepo-solr-indexer.  If not, see <http://www.gnu.org/licenses/>.
+ * Copyright Dansk Bibliotekscenter a/s. Licensed under GNU GPL v3
+ *  See license text at https://opensource.dbc.dk/licenses/gpl-3.0
  */
+
 package dk.dbc.rawrepo.indexer;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import dk.dbc.eeconfig.EEConfig;
-import dk.dbc.marcxmerge.MarcXChangeMimeType;
-import dk.dbc.marcxmerge.MarcXMerger;
-import dk.dbc.marcxmerge.MarcXMergerException;
-import dk.dbc.openagency.client.OpenAgencyServiceFromURL;
-import dk.dbc.rawrepo.QueueJob;
-import dk.dbc.rawrepo.RawRepoDAO;
-import dk.dbc.rawrepo.RawRepoException;
-import dk.dbc.rawrepo.RawRepoExceptionRecordNotFound;
-import dk.dbc.rawrepo.Record;
-import dk.dbc.rawrepo.RecordId;
-import dk.dbc.rawrepo.RelationHintsOpenAgency;
+import dk.dbc.rawrepo.dto.RecordDTO;
+import dk.dbc.rawrepo.dto.RecordIdDTO;
 import dk.dbc.rawrepo.exception.SolrIndexerRawRepoException;
 import dk.dbc.rawrepo.exception.SolrIndexerSolrException;
+import dk.dbc.rawrepo.queue.QueueException;
+import dk.dbc.rawrepo.queue.QueueItem;
+import dk.dbc.rawrepo.queue.RawRepoQueueDAO;
 import dk.dbc.util.Stopwatch;
+import dk.dbc.util.Timed;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrInputDocument;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.MDC;
+import org.slf4j.ext.XLogger;
+import org.slf4j.ext.XLoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
+import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.sql.DataSource;
-import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -61,60 +38,40 @@ import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
 /**
- *
+ * @author DBC {@literal <dk.dbc.dk>}
  */
 @Stateless
 public class Indexer {
+    private static final XLogger LOGGER = XLoggerFactory.getXLogger(Indexer.class);
 
-    private final static Logger log = LoggerFactory.getLogger(Indexer.class);
-
-    private final static String TRACKING_ID = "trackingId";
-
-    @Inject
-    @EEConfig.Name(C.SOLR_URL)
-    @NotNull
-    String solrUrl;
+    private static final String TRACKING_ID = "trackingId";
 
     @Inject
-    @EEConfig.Name(C.OPENAGENCY_URL)
-    @NotNull
-    String openAgencyUrl;
-
-    @Resource(lookup = C.DATASOURCE)
-    DataSource dataSource;
+    @ConfigProperty(name = "SOLR_URL", defaultValue = "SOLR_URL not set")
+    protected String SOLR_URL;
 
     @Inject
-    @EEConfig.Name(C.WORKER_NAME)
-    @EEConfig.Default(C.WORKER_NAME_DEFAULT)
-    @NotNull
-    String workerName;
+    @ConfigProperty(name = "WORKER", defaultValue = "WORKER not set")
+    protected String WORKER;
 
     @Inject
-    MetricsRegistry registry;
+    @ConfigProperty(name = "OPENAGENCY_URL", defaultValue = "OPENAGENCY_URL not set")
+    protected String openAgencyUrl;
 
-    @Inject
-    MergerPool mergerPool;
+    @Resource(lookup = "jdbc/rawrepo")
+    protected DataSource rawrepoDataSource;
 
-    Timer processJobTimer;
-    Timer getConnectionTimer;
-    Timer createDAOTimer;
-    Timer dequeueJobTimer;
-    Timer fetchRecordTimer;
-    Timer createIndexDocumentTimer;
-    Timer updateSolrTimer;
-    Timer deleteSolrDocumentTimer;
-    Timer queueFailTimer;
-    Timer commitTimer;
+    @EJB
+    private RawRepoRecordBean recordBean;
 
-    Counter contentsIndexed;
-    Counter contentsSkipped;
-    Counter contentsFailed;
+    static final String MIMETYPE_MARCXCHANGE = "text/marcxchange";
+    static final String MIMETYPE_ENRICHMENT = "text/enrichment+marcxchange";
+    static final String MIMETYPE_ARTICLE = "text/article+marcxchange";
+    static final String MIMETYPE_AUTHORITY = "text/authority+marcxchange";
 
     JavaScriptWorker worker;
 
     private SolrServer solrServer;
-
-    private OpenAgencyServiceFromURL openAgency;
 
     public Indexer() {
         this.solrServer = null;
@@ -122,25 +79,8 @@ public class Indexer {
 
     @PostConstruct
     public void create() {
-        // Read solr url from application context
-        log.info("Initializing with url {}", solrUrl);
-        solrServer = new HttpSolrServer(solrUrl);
-        openAgency = OpenAgencyServiceFromURL.builder().build(openAgencyUrl);
-
-        processJobTimer = registry.getRegistry().timer(MetricRegistry.name(Indexer.class, "processJob"));
-        getConnectionTimer = registry.getRegistry().timer(MetricRegistry.name(Indexer.class, "getConnection"));
-        createDAOTimer = registry.getRegistry().timer(MetricRegistry.name(Indexer.class, "createDAO"));
-        dequeueJobTimer = registry.getRegistry().timer(MetricRegistry.name(Indexer.class, "dequeueJob"));
-        fetchRecordTimer = registry.getRegistry().timer(MetricRegistry.name(Indexer.class, "fetchRecord"));
-        createIndexDocumentTimer = registry.getRegistry().timer(MetricRegistry.name(Indexer.class, "createIndexDocument"));
-        updateSolrTimer = registry.getRegistry().timer(MetricRegistry.name(Indexer.class, "updateSolr"));
-        deleteSolrDocumentTimer = registry.getRegistry().timer(MetricRegistry.name(Indexer.class, "deleteSolrDocument"));
-        queueFailTimer = registry.getRegistry().timer(MetricRegistry.name(Indexer.class, "queueFail"));
-        commitTimer = registry.getRegistry().timer(MetricRegistry.name(Indexer.class, "commit"));
-        contentsIndexed = registry.getRegistry().counter(MetricRegistry.name(Indexer.class, "contentsIndexed"));
-        contentsSkipped = registry.getRegistry().counter(MetricRegistry.name(Indexer.class, "contentsSkipped"));
-        contentsFailed = registry.getRegistry().counter(MetricRegistry.name(Indexer.class, "contentsFailed"));
-
+        LOGGER.info("Initializing with url {}", SOLR_URL);
+        solrServer = new HttpSolrServer(SOLR_URL);
         worker = new JavaScriptWorker();
     }
 
@@ -164,150 +104,141 @@ public class Indexer {
         final Stopwatch dequeueStopwatch = new Stopwatch();
 
         while (moreWork) {
-            Timer.Context time = processJobTimer.time();
             try (Connection connection = getConnection()) {
-                RawRepoDAO dao = createDAO(connection);
+                final RawRepoQueueDAO dao = createDAO(connection);
                 try {
                     dequeueStopwatch.reset();
-                    QueueJob job = dequeueJob(dao);
+                    final QueueItem job = dequeueJob(dao);
                     long dequeueDurationInMS = dequeueStopwatch.getElapsedTime(TimeUnit.MILLISECONDS);
 
                     if (job != null) {
-                        log.info("---------------------------------------------------------------");
-                        log.info("Dequeued job in {} ms", dequeueDurationInMS);
+                        LOGGER.info("---------------------------------------------------------------");
+                        LOGGER.info("Dequeued job in {} ms", dequeueDurationInMS);
                         MDC.put(TRACKING_ID, createTrackingId(job));
                         processJob(job, dao);
                         commit(connection);
                         processedJobs++;
                         if (processedJobs % 1000 == 0) {
-                            log.info("Still indexing {} jobs from '{}'", processedJobs, workerName);
+                            LOGGER.info("Still indexing {} jobs from '{}'", processedJobs, WORKER);
                         }
-                        time.stop();
                     } else {
                         moreWork = false;
                     }
-                } catch (RawRepoException | IllegalArgumentException | SQLException ex) {
+                } catch (QueueException | IllegalArgumentException | SQLException ex) {
                     connection.rollback();
                     throw ex;
                 }
             } catch (SQLException ex) {
                 // If we get a SQLException there is something wrong which we can't do anything about.
-                log.error("SQLException: ", ex);
+                LOGGER.error("SQLException: ", ex);
                 throw new SolrIndexerRawRepoException("SQL exception from rawrepo:" + ex.toString(), ex);
-            } catch (RawRepoException | RuntimeException ex) {
-                log.error("Error getting job from database", ex);
+            } catch (QueueException | RuntimeException ex) {
+                LOGGER.error("Error getting job from database", ex);
                 moreWork = false;
             } finally {
                 MDC.remove(TRACKING_ID);
             }
         }
         if (processedJobs > 0) {
-            log.info("Done indexing {} jobs from '{}'", processedJobs, workerName);
+            LOGGER.info("Done indexing {} jobs from '{}'", processedJobs, WORKER);
         }
     }
 
     protected Connection getConnection() throws SQLException {
-        Timer.Context time = getConnectionTimer.time();
-        final Connection connection = dataSource.getConnection();
+        final Connection connection = rawrepoDataSource.getConnection();
         connection.setAutoCommit(false);
-        time.stop();
         return connection;
     }
 
-    private RawRepoDAO createDAO(final Connection connection) throws RawRepoException {
-        try (Timer.Context time = createDAOTimer.time()) {
-            return RawRepoDAO.builder(connection).relationHints(new RelationHintsOpenAgency(openAgency)).build();
-        }
+    private RawRepoQueueDAO createDAO(final Connection connection) throws QueueException {
+        return RawRepoQueueDAO.builder(connection).build();
     }
 
-    private void processJob(QueueJob job, RawRepoDAO dao) throws RawRepoException, SolrIndexerSolrException {
-        log.info("Indexing {}", job);
-        RecordId jobId = job.getJob();
-        String id = jobId.getBibliographicRecordId();
-        int library = jobId.getAgencyId();
+    @Timed
+    public void processJob(QueueItem item, RawRepoQueueDAO dao) throws QueueException, SolrIndexerSolrException {
+        LOGGER.info("Indexing {}", item);
+        final String bibliographicRecordId = item.getBibliographicRecordId();
+        final int agencyId = item.getAgencyId();
+
+        final RecordIdDTO jobId = new RecordIdDTO();
+        jobId.setBibliographicRecordId(bibliographicRecordId);
+        jobId.setAgencyId(agencyId);
+
         try {
-            Record record = fetchRecord(dao, id, library);
+            final RecordDTO record = fetchRecord(bibliographicRecordId, agencyId);
             if (record == null) {
-                log.info("record from {} does not exist, most likely queued by dependency", job);
+                LOGGER.info("record from {} does not exist, most likely queued by dependency", item);
                 return;
             }
-            MDC.put(TRACKING_ID, createTrackingId(job, record));
+            MDC.put(TRACKING_ID, createTrackingId(item, record));
             if (record.isDeleted()) {
                 deleteSolrDocument(jobId);
             } else {
                 SolrInputDocument doc = createIndexDocument(record);
                 updateSolr(jobId, doc);
             }
-            log.info("Indexed {}", job);
-        } catch (RawRepoExceptionRecordNotFound ex) {
-            log.error("Queued record does not exist {}", job);
-            queueFail(dao, job, ex.getMessage());
+            LOGGER.info("Indexed {}", item);
+        } catch (QueueException ex) {
+            LOGGER.error("Queued record does not exist {}", item);
+            queueFail(dao, item, ex.getMessage());
         } catch (HttpSolrServer.RemoteSolrException ex) {
             // Index is missing on the solr server so we need to stop now
             if (ex.getMessage().contains("unknown field")) {
                 throw new SolrIndexerSolrException("Missing index: " + ex.getMessage(), ex);
             }
-            log.error("Error processing {}", job, ex);
-            queueFail(dao, job, ex.getMessage());
-        } catch (RawRepoException | MarcXMergerException | SolrException | SolrServerException | IOException ex) {
-            log.error("Error processing {}", job, ex);
-            queueFail(dao, job, ex.getMessage());
+            LOGGER.error("Error processing {}", item, ex);
+            queueFail(dao, item, ex.getMessage());
+        } catch (SolrException | SolrServerException | IOException ex) {
+            LOGGER.error("Error processing {}", item, ex);
+            queueFail(dao, item, ex.getMessage());
         }
     }
 
-    private QueueJob dequeueJob(final RawRepoDAO dao) throws RawRepoException {
-        Timer.Context time = dequeueJobTimer.time();
-        final QueueJob job = dao.dequeue(workerName);
-        if (job != null) {
-            time.stop();
-        }
-        return job;
+    private QueueItem dequeueJob(final RawRepoQueueDAO dao) throws QueueException {
+        return dao.dequeue(WORKER);
     }
 
-    private Record fetchRecord(RawRepoDAO dao, String id, int library) throws RawRepoException, MarcXMergerException {
-        MarcXMerger merger = null;
-        try (Timer.Context time = fetchRecordTimer.time()) {
-            if (!dao.recordExistsMaybeDeleted(id, library)) {
-                return null;
-            }
-            merger = mergerPool.getMerger();
-            return dao.fetchMergedRecordExpanded(id, library, merger, true);
+    private RecordDTO fetchRecord(String bibliographicRecordId, int agencyId) throws QueueException {
+        if (!recordBean.recordExistsMaybeDeleted(bibliographicRecordId, agencyId)) {
+            return null;
+        } else {
+            return recordBean.fetchRecord(bibliographicRecordId, agencyId);
+        }
+    }
+
+    private String createSolrDocumentId(RecordIdDTO recordId) {
+        LOGGER.entry();
+        String result = null;
+        try {
+            result = recordId.getBibliographicRecordId() + ":" + recordId.getAgencyId();
+
+            return result;
         } finally {
-            if (merger != null) {
-                mergerPool.putMerger(merger);
-            }
+            LOGGER.exit(result);
         }
     }
 
-    private String createSolrDocumentId(RecordId recordId) {
-        return recordId.getBibliographicRecordId() + ":" + recordId.getAgencyId();
-    }
-
-    SolrInputDocument createIndexDocument(Record record) {
-        Timer.Context time = createIndexDocumentTimer.time();
+    SolrInputDocument createIndexDocument(RecordDTO record) {
         final SolrInputDocument doc = new SolrInputDocument();
-        RecordId recordId = record.getId();
+        RecordIdDTO recordId = record.getRecordId();
         doc.addField("id", createSolrDocumentId(recordId));
 
-        String mimeType = record.getMimeType();
+        String mimeType = record.getMimetype();
         switch (mimeType) {
-            case MarcXChangeMimeType.MARCXCHANGE:
-            case MarcXChangeMimeType.ARTICLE:
-            case MarcXChangeMimeType.AUTHORITY:
-            case MarcXChangeMimeType.ENRICHMENT:
-                log.debug("Indexing content of {} with mimetype {}", recordId, mimeType);
+            case MIMETYPE_MARCXCHANGE:
+            case MIMETYPE_ARTICLE:
+            case MIMETYPE_AUTHORITY:
+            case MIMETYPE_ENRICHMENT:
+                LOGGER.debug("Indexing content of {} with mimetype {}", recordId, mimeType);
                 String content = new String(record.getContent(), StandardCharsets.UTF_8);
                 try {
                     worker.addFields(doc, content, mimeType);
-                    contentsIndexed.inc();
                 } catch (Exception ex) {
-                    log.error("Error adding fields for document '{}': ", content, ex);
-                    contentsFailed.inc();
+                    LOGGER.error("Error adding fields for document '{}': ", content, ex);
                 }
                 break;
             default:
-                contentsSkipped.inc();
-                log.debug("Skipping indexing of {} with mimetype {}", recordId, mimeType);
+                LOGGER.debug("Skipping indexing of {} with mimetype {}", recordId, mimeType);
         }
 
         doc.addField("rec.bibliographicRecordId", recordId.getBibliographicRecordId());
@@ -315,42 +246,33 @@ public class Indexer {
         doc.addField("rec.created", record.getCreated());
         doc.addField("rec.modified", record.getModified());
         doc.addField("rec.trackingId", record.getTrackingId());
-        log.trace("Created solr document {}", doc);
-        time.stop();
+        LOGGER.trace("Created solr document {}", doc);
         return doc;
     }
 
-    private void deleteSolrDocument(RecordId jobId) throws IOException, SolrServerException {
-        Timer.Context time = deleteSolrDocumentTimer.time();
-        log.debug("Deleting document for {} to solr", jobId);
+    private void deleteSolrDocument(RecordIdDTO jobId) throws IOException, SolrServerException {
+        LOGGER.debug("Deleting document for {} to solr", jobId);
         solrServer.deleteById(createSolrDocumentId(jobId));
-        time.stop();
     }
 
-    private void updateSolr(RecordId jobId, SolrInputDocument doc) throws IOException, SolrServerException {
-        Timer.Context time = updateSolrTimer.time();
-        log.debug("Adding document for {} to solr", jobId);
+    private void updateSolr(RecordIdDTO jobId, SolrInputDocument doc) throws IOException, SolrServerException {
+        LOGGER.debug("Adding document for {} to solr", jobId);
         solrServer.add(doc);
-        time.stop();
     }
 
-    private void queueFail(RawRepoDAO dao, QueueJob job, String error) throws RawRepoException {
-        Timer.Context time = queueFailTimer.time();
+    private void queueFail(RawRepoQueueDAO dao, QueueItem job, String error) throws QueueException {
         dao.queueFail(job, error);
-        time.stop();
     }
 
     private void commit(final Connection connection) throws SQLException {
-        Timer.Context time = commitTimer.time();
         connection.commit();
-        time.stop();
     }
 
-    private static String createTrackingId(QueueJob job) {
+    private static String createTrackingId(QueueItem job) {
         return "RawRepoIndexer:" + job.toString();
     }
 
-    private static String createTrackingId(QueueJob job, Record record) {
+    private static String createTrackingId(QueueItem job, RecordDTO record) {
         String trackingId = record.getTrackingId();
         if (trackingId == null || trackingId.isEmpty()) {
             return createTrackingId(job);

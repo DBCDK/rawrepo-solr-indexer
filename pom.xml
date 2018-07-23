@@ -7,9 +7,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>rawrepo-solr-indexer</artifactId>
+    <artifactId>rawrepo-solr-indexer-updateservice</artifactId>
     <packaging>war</packaging>
-    <name>rawrepo-solr-indexer</name>
+    <name>rawrepo-solr-indexer-updateservice</name>
     <version>1.10-SNAPSHOT</version>
 
     <parent>
@@ -25,14 +25,11 @@
         <commons-logging.version>1.1.3</commons-logging.version>
         <metrics-core.version>3.0.2</metrics-core.version>
         <postgresql.version>9.3-1101-jdbc41</postgresql.version>
+        <microprofile.version>1.2</microprofile.version>
+        <serviceutils.version>0.1-SNAPSHOT</serviceutils.version>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>rawrepo-access</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <dependency>
             <artifactId>solr-solrj</artifactId>
             <groupId>org.apache.solr</groupId>
@@ -51,6 +48,16 @@
             <groupId>dk.dbc</groupId>
             <artifactId>stopwatch</artifactId>
             <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>dk.dbc</groupId>
+            <artifactId>rawrepo-queue-dao</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>dk.dbc</groupId>
+            <artifactId>serviceutils</artifactId>
+            <version>${serviceutils.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-logging</groupId>
@@ -114,6 +121,17 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.config</groupId>
+            <artifactId>microprofile-config-api</artifactId>
+            <version>${microprofile.version}</version> <!-- version 1.2 available since Payara v4.1.2.181 -->
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-mapper-asl</artifactId>
+            <version>1.9.13</version>
         </dependency>
     </dependencies>
 

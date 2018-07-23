@@ -1,32 +1,12 @@
 /*
- * dbc-rawrepo-solr-indexer
- * Copyright (C) 2015 Dansk Bibliotekscenter a/s, Tempovej 7-11, DK-2750 Ballerup,
- * Denmark. CVR: 15149043*
- *
- * This file is part of dbc-rawrepo-solr-indexer.
- *
- * dbc-rawrepo-solr-indexer is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * dbc-rawrepo-solr-indexer is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with dbc-rawrepo-solr-indexer.  If not, see <http://www.gnu.org/licenses/>.
+ * Copyright Dansk Bibliotekscenter a/s. Licensed under GNU GPL v3
+ *  See license text at https://opensource.dbc.dk/licenses/gpl-3.0
  */
+
 package dk.dbc.rawrepo.indexer;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Timer;
-import dk.dbc.marcxmerge.MarcXChangeMimeType;
-import dk.dbc.rawrepo.Record;
-import dk.dbc.rawrepo.RecordId;
-import dk.dbc.rawrepo.indexer.Indexer;
-import dk.dbc.rawrepo.indexer.JavaScriptWorker;
+import dk.dbc.rawrepo.dto.RecordDTO;
+import dk.dbc.rawrepo.dto.RecordIdDTO;
 import org.apache.solr.common.SolrInputDocument;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -34,7 +14,13 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.FormatStyle;
+import java.time.temporal.ChronoField;
 import java.util.Date;
+import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -44,115 +30,38 @@ import static org.junit.Assert.assertNull;
  */
 public class IndexerTest {
 
-    class MockRecord implements Record {
+    private static final DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+            .appendPattern("yyyyMMdd")
+            .parseDefaulting(ChronoField.NANO_OF_DAY, 0)
+            .toFormatter()
+            .withZone(ZoneId.of("Europe/Copenhagen"));
 
-        private final RecordId id;
-        private final byte[] content;
-        private final Instant created;
-        private final Instant modified;
-        private final boolean original;
-        private String mimeType;
+    private RecordDTO createRecordDTO(String bibliographicRecordId,
+                                      int agencyId,
+                                      byte[] content,
+                                      Instant created,
+                                      Instant modified,
+                                      boolean deleted,
+                                      String mimetype) {
 
-        MockRecord(String id, int library, byte[] content, Instant created, Instant modified, boolean original, String mimeType) {
-            this.id = new RecordId(id, library);
-            this.content = content;
-            this.created = created;
-            this.modified = modified;
-            this.original = original;
-            this.mimeType = mimeType;
-        }
+        RecordIdDTO recordIdDTO = new RecordIdDTO();
+        recordIdDTO.setBibliographicRecordId(bibliographicRecordId);
+        recordIdDTO.setAgencyId(agencyId);
 
-        @Override
-        public byte[] getContent() {
-            return this.content;
-        }
+        RecordDTO recordDTO = new RecordDTO();
+        recordDTO.setRecordId(recordIdDTO);
+        recordDTO.setContent(content);
+        recordDTO.setCreated(created.toString());
+        recordDTO.setModified(modified.toString());
+        recordDTO.setDeleted(deleted);
+        recordDTO.setMimetype(mimetype);
 
-        @Override
-        public boolean isDeleted() {
-            return false;
-        }
-
-        @Override
-        public void setDeleted(boolean deleted) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public Instant getCreated() {
-            return this.created;
-        }
-
-        @Override
-        public RecordId getId() {
-            return this.id;
-        }
-
-        @Override
-        public Instant getModified() {
-            return modified;
-        }
-
-        @Override
-        public boolean isOriginal() {
-            return original;
-        }
-
-        @Override
-        public void setContent(byte[] content) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public void setCreated(Instant created) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public void setModified(Instant modified) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public String getMimeType() {
-            return mimeType;
-        }
-
-        @Override
-        public void setMimeType(String mimeType) {
-            this.mimeType = mimeType;
-        }
-
-        @Override
-        public boolean isEnriched() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public void setEnriched(boolean enriched) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public String getEnrichmentTrail() {
-            return String.valueOf(id.getAgencyId());
-        }
-
-        @Override
-        public String getTrackingId() {
-            return "track";
-        }
-
-        @Override
-        public void setTrackingId(String trackingId) {
-        }
+        return recordDTO;
     }
 
     private static Indexer createInstance() {
         @SuppressWarnings("UseInjectionInsteadOfInstantion")
         Indexer indexer = new Indexer();
-        indexer.contentsIndexed = new Counter();
-        indexer.contentsSkipped = new Counter();
-        indexer.contentsFailed = new Counter();
         return indexer;
     }
 
@@ -283,16 +192,15 @@ public class IndexerTest {
                 + "      </marcx:datafield>\n"
                 + "    </marcx:record>";
 
-        Record record = new MockRecord("id", 123456, content.getBytes(), created, modified, true, MarcXChangeMimeType.MARCXCHANGE);
+        RecordDTO record = createRecordDTO("id", 123456, content.getBytes(), created, modified, true, Indexer.MIMETYPE_MARCXCHANGE);
 
         Indexer indexer = createInstance();
-        indexer.createIndexDocumentTimer = new Timer();
         indexer.worker = new JavaScriptWorker();
 
         SolrInputDocument doc = indexer.createIndexDocument(record);
 
-        assertEquals(created, doc.getField("rec.created").getValue());
-        assertEquals(modified, doc.getField("rec.modified").getValue());
+        assertEquals(created, Instant.parse(doc.getField("rec.created").getValue().toString()));
+        assertEquals(modified, Instant.parse(doc.getField("rec.modified").getValue().toString()));
         assertEquals("id:123456", doc.getField("id").getValue());
         assertEquals("id", doc.getField("rec.bibliographicRecordId").getValue());
         assertEquals(123456, doc.getField("rec.agencyId").getValue());
@@ -315,16 +223,15 @@ public class IndexerTest {
         Instant modified = new Date(200).toInstant();
         String content = ">hello world<";
 
-        Record record = new MockRecord("id", 123456, content.getBytes(), created, modified, true, MarcXChangeMimeType.MARCXCHANGE);
+        RecordDTO record = createRecordDTO("id", 123456, content.getBytes(), created, modified, true, Indexer.MIMETYPE_MARCXCHANGE);
 
         Indexer indexer = createInstance();
-        indexer.createIndexDocumentTimer = new Timer();
         indexer.worker = new JavaScriptWorker();
 
         SolrInputDocument doc = indexer.createIndexDocument(record);
 
-        assertEquals(created, doc.getField("rec.created").getValue());
-        assertEquals(modified, doc.getField("rec.modified").getValue());
+        assertEquals(created, Instant.parse(doc.getField("rec.created").getValue().toString()));
+        assertEquals(modified, Instant.parse(doc.getField("rec.modified").getValue().toString()));
         assertEquals("id:123456", doc.getField("id").getValue());
         assertEquals("id", doc.getField("rec.bibliographicRecordId").getValue());
         assertEquals(123456, doc.getField("rec.agencyId").getValue());
@@ -342,16 +249,15 @@ public class IndexerTest {
         Instant modified = new Date(200).toInstant();
         String content = "";
 
-        Record record = new MockRecord("id", 123456, content.getBytes(), created, modified, true, "DUMMY");
+        RecordDTO record = createRecordDTO("id", 123456, content.getBytes(), created, modified, true, "DUMMY");
 
         Indexer indexer = createInstance();
-        indexer.createIndexDocumentTimer = new Timer();
         indexer.worker = new JavaScriptWorker();
 
         SolrInputDocument doc = indexer.createIndexDocument(record);
 
-        assertEquals(created, doc.getField("rec.created").getValue());
-        assertEquals(modified, doc.getField("rec.modified").getValue());
+        assertEquals(created, Instant.parse(doc.getField("rec.created").getValue().toString()));
+        assertEquals(modified, Instant.parse(doc.getField("rec.modified").getValue().toString()));
         assertEquals("id:123456", doc.getField("id").getValue());
         assertEquals("id", doc.getField("rec.bibliographicRecordId").getValue());
         assertEquals(123456, doc.getField("rec.agencyId").getValue());
