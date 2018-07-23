@@ -93,8 +93,8 @@ pipeline {
 
                     if (env.BRANCH_NAME == 'develop') {
                         sh """
-                            docker tag docker-io.dbc.dk/rawrepo-solr-indexer-updateservice:${DOCKER_IMAGE_VERSION} docker-i.dbc.dk/update-postgres:${DOCKER_IMAGE_DIT_VERSION}
-                            docker push docker-i.dbc.dk/update-postgres:${DOCKER_IMAGE_DIT_VERSION}
+                            docker tag docker-io.dbc.dk/rawrepo-solr-indexer-updateservice:${DOCKER_IMAGE_VERSION} docker-io.dbc.dk/rawrepo-solr-indexer-updateservice:${DOCKER_IMAGE_DIT_VERSION}
+                            docker push docker-io.dbc.dk/rawrepo-solr-indexer-updateservice:${DOCKER_IMAGE_DIT_VERSION}
                         """
                     }
                 }
@@ -109,9 +109,10 @@ pipeline {
             }
             steps {
                 script {
-                    lock('meta-rawrepo-rawrepo-solr-indexer-updateservice-deploy-staging') {
-                        deploy("basismig")
-                        deploy("fbstest")
+                    lock('meta-rawrepo-solr-indexer-updateservice-deploy-staging') {
+                        echo "Deploy not yet working so skip"
+                        #deploy("basismig")
+                        #deploy("fbstest")
                     }
                 }
             }
@@ -125,9 +126,10 @@ pipeline {
             }
             steps {
                 script {
-                    lock('meta-rawrepo-rawrepo-solr-indexer-updateservice-deploy-prod') {
-                        deploy("boblebad")
-                        deploy("cisterne")
+                    lock('meta-rawrepo-solr-indexer-updateservice-deploy-prod') {
+                        echo "Deploy not yet working so skip"
+                        #deploy("boblebad")
+                        #deploy("cisterne")
                     }
                 }
             }
