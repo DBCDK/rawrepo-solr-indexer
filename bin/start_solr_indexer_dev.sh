@@ -34,7 +34,6 @@ fi
 
 if [ "$version" = "${USER}" ]
 then
-	hop=`pwd`
     echo "Building ${package}"
 	mvn clean package > /tmp/mvn.out.${USER}.${package}
 	echo "Done building"
