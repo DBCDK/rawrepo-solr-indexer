@@ -12,6 +12,8 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.ext.XLogger;
 import org.slf4j.ext.XLoggerFactory;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.client.Client;
@@ -34,6 +36,18 @@ public class RawRepoRecordBean {
 
     private Client client;
 
+    @PostConstruct
+    public void initialize() {
+        client = ClientBuilder.newClient();
+    }
+
+    @PreDestroy
+    public void close() {
+        if (client != null) {
+            client.close();
+        }
+    }
+
     public boolean recordExistsMaybeDeleted(String id, int agencyId) {
         final Stopwatch stopwatch = new Stopwatch();
 
@@ -41,7 +55,6 @@ public class RawRepoRecordBean {
 
         LOGGER.info("Calling {}", uri);
 
-        client = ClientBuilder.newClient();
         final RecordExistsDTO dto = client.target(uri)
                 .request(MediaType.APPLICATION_JSON)
                 .get(RecordExistsDTO.class);
@@ -59,7 +72,6 @@ public class RawRepoRecordBean {
 
         LOGGER.info("Calling {}", uri);
 
-        client = ClientBuilder.newClient();
         record = client.target(uri)
                 .request(MediaType.APPLICATION_JSON)
                 .get(RecordDTO.class);
