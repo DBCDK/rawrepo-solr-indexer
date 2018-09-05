@@ -7,24 +7,23 @@ package dk.dbc.rawrepo.indexer;
 
 import dk.dbc.rawrepo.dto.RecordDTO;
 import dk.dbc.rawrepo.dto.RecordExistsDTO;
-import dk.dbc.util.StopwatchInterceptor;
-import dk.dbc.util.Timed;
+import dk.dbc.util.Stopwatch;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.ext.XLogger;
 import org.slf4j.ext.XLoggerFactory;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import javax.interceptor.Interceptors;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.MediaType;
+import java.util.concurrent.TimeUnit;
 
 
-@Interceptors(StopwatchInterceptor.class)
 @Stateless
 public class RawRepoRecordBean {
     private static final XLogger LOGGER = XLoggerFactory.getXLogger(RawRepoRecordBean.class);
+    private static final XLogger LOGGER_STOPWATCH = XLoggerFactory.getXLogger("dk.dbc.rawrepo.indexer.stopwatch");
 
     private final String URL_RECORD = "%s/api/v1/record/%s/%s?allow-deleted=true";
     private final String URL_RECORD_EXISTS = "%s/api/v1/record/%s/%s/exists?mode=merged&allow-deleted=true";
@@ -35,9 +34,9 @@ public class RawRepoRecordBean {
 
     private Client client;
 
-    @Timed
     public boolean recordExistsMaybeDeleted(String id, int agencyId) {
-        LOGGER.entry(id, agencyId);
+        final Stopwatch stopwatch = new Stopwatch();
+
         final String uri = String.format(URL_RECORD_EXISTS, RAWREPO_RECORD_URL, agencyId, id);
 
         LOGGER.info("Calling {}", uri);
@@ -47,12 +46,12 @@ public class RawRepoRecordBean {
                 .request(MediaType.APPLICATION_JSON)
                 .get(RecordExistsDTO.class);
 
+        LOGGER_STOPWATCH.info("recordExistsMaybeDeleted took {} ms", stopwatch.getElapsedTime(TimeUnit.MILLISECONDS));
         return dto.isValue();
     }
 
-    @Timed
     public RecordDTO fetchRecord(String id, int agencyId) {
-        LOGGER.entry(id, agencyId);
+        final Stopwatch stopwatch = new Stopwatch();
 
         RecordDTO record = null;
 
@@ -65,6 +64,7 @@ public class RawRepoRecordBean {
                 .request(MediaType.APPLICATION_JSON)
                 .get(RecordDTO.class);
 
+        LOGGER_STOPWATCH.info("fetchRecord took {} ms", stopwatch.getElapsedTime(TimeUnit.MILLISECONDS));
         return record;
     }
 

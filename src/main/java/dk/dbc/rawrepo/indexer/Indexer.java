@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 @Stateless
 public class Indexer {
     private static final XLogger LOGGER = XLoggerFactory.getXLogger(Indexer.class);
+    private static final XLogger LOGGER_STOPWATCH = XLoggerFactory.getXLogger("dk.dbc.rawrepo.indexer.stopwatch");
 
     private static final String TRACKING_ID = "trackingId";
 
@@ -59,6 +60,9 @@ public class Indexer {
 
     @EJB
     private RawRepoRecordBean recordBean;
+
+    @EJB
+    private RawRepoQueueBean queueBean;
 
     static final String MIMETYPE_MARCXCHANGE = "text/marcxchange";
     static final String MIMETYPE_ENRICHMENT = "text/enrichment+marcxchange";
@@ -86,7 +90,6 @@ public class Indexer {
     }
 
     public void performWork() throws SolrIndexerRawRepoException, SolrIndexerSolrException {
-
         boolean moreWork = true;
         int processedJobs = 0;
 
@@ -97,20 +100,21 @@ public class Indexer {
             throw new SolrIndexerSolrException("Could not connect to the solr server. " + ex.getMessage(), ex);
         }
 
-        final Stopwatch dequeueStopwatch = new Stopwatch();
+        final Stopwatch stopwatch = new Stopwatch();
 
         while (moreWork) {
             try (Connection connection = getConnection()) {
                 final RawRepoQueueDAO dao = createDAO(connection);
                 try {
-                    dequeueStopwatch.reset();
-                    final QueueItem job = dequeueJob(dao);
-                    long dequeueDurationInMS = dequeueStopwatch.getElapsedTime(TimeUnit.MILLISECONDS);
+                    stopwatch.reset();
+                    final QueueItem job = queueBean.dequeueJob(dao, WORKER);
+                    long dequeueDurationInMS = stopwatch.getElapsedTime(TimeUnit.MILLISECONDS);
 
                     if (job != null) {
-                        LOGGER.info("---------------------------------------------------------------");
-                        LOGGER.info("Dequeued job in {} ms", dequeueDurationInMS);
-                        MDC.put(TRACKING_ID, createTrackingId(job));
+
+                        LOGGER_STOPWATCH.info("dequeueJob took {} ms", dequeueDurationInMS);
+
+                        MDC.put(TRACKING_ID, createTrackingId(job)); // Early trackingId as we don't yet have the record
                         processJob(job, dao);
                         commit(connection);
                         processedJobs++;
@@ -151,54 +155,52 @@ public class Indexer {
     }
 
     @Timed
-    public void processJob(QueueItem item, RawRepoQueueDAO dao) throws QueueException, SolrIndexerSolrException {
-        LOGGER.info("Indexing {}", item);
-        final String bibliographicRecordId = item.getBibliographicRecordId();
-        final int agencyId = item.getAgencyId();
+    public void processJob(QueueItem job, RawRepoQueueDAO dao) throws QueueException, SolrIndexerSolrException {
+        LOGGER.info("Indexing {}", job);
+        final Stopwatch stopwatch = new Stopwatch();
 
         final RecordIdDTO jobId = new RecordIdDTO();
-        jobId.setBibliographicRecordId(bibliographicRecordId);
-        jobId.setAgencyId(agencyId);
-
+        jobId.setBibliographicRecordId(job.getBibliographicRecordId());
+        jobId.setAgencyId(job.getAgencyId());
+        LOGGER.info("---------------------------------------------------------------");
         try {
-            final RecordDTO record = fetchRecord(bibliographicRecordId, agencyId);
+            final RecordDTO record = fetchRecord(jobId);
             if (record == null) {
-                LOGGER.info("record from {} does not exist, most likely queued by dependency", item);
+                LOGGER.info("record from {} does not exist, most likely queued by dependency", job);
                 return;
             }
-            MDC.put(TRACKING_ID, createTrackingId(item, record));
+            MDC.put(TRACKING_ID, createTrackingId(job, record));
             if (record.isDeleted()) {
                 deleteSolrDocument(jobId);
             } else {
                 SolrInputDocument doc = createIndexDocument(record);
                 updateSolr(jobId, doc);
             }
-            LOGGER.info("Indexed {}", item);
+            LOGGER.info("Indexed {}", job);
         } catch (QueueException ex) {
-            LOGGER.error("Queued record does not exist {}", item);
-            queueFail(dao, item, ex.getMessage());
+            LOGGER.error("Queued record does not exist {}", job);
+            queueBean.queueFail(dao, job, ex.getMessage());
         } catch (HttpSolrServer.RemoteSolrException ex) {
             // Index is missing on the solr server so we need to stop now
             if (ex.getMessage().contains("unknown field")) {
                 throw new SolrIndexerSolrException("Missing index: " + ex.getMessage(), ex);
             }
-            LOGGER.error("Error processing {}", item, ex);
-            queueFail(dao, item, ex.getMessage());
+            LOGGER.error("Error processing {}", job, ex);
+            queueBean.queueFail(dao, job, ex.getMessage());
         } catch (SolrException | SolrServerException | IOException ex) {
-            LOGGER.error("Error processing {}", item, ex);
-            queueFail(dao, item, ex.getMessage());
+            LOGGER.error("Error processing {}", job, ex);
+            queueBean.queueFail(dao, job, ex.getMessage());
+        } finally {
+            MDC.remove(TRACKING_ID);
+            LOGGER_STOPWATCH.info("processJob took {} ms", stopwatch.getElapsedTime(TimeUnit.MILLISECONDS));
         }
     }
 
-    private QueueItem dequeueJob(final RawRepoQueueDAO dao) throws QueueException {
-        return dao.dequeue(WORKER);
-    }
-
-    private RecordDTO fetchRecord(String bibliographicRecordId, int agencyId) throws QueueException {
-        if (!recordBean.recordExistsMaybeDeleted(bibliographicRecordId, agencyId)) {
+    private RecordDTO fetchRecord(RecordIdDTO jobid) throws QueueException {
+        if (!recordBean.recordExistsMaybeDeleted(jobid.getBibliographicRecordId(), jobid.getAgencyId())) {
             return null;
         } else {
-            return recordBean.fetchRecord(bibliographicRecordId, agencyId);
+            return recordBean.fetchRecord(jobid.getBibliographicRecordId(), jobid.getAgencyId());
         }
     }
 
@@ -228,7 +230,9 @@ public class Indexer {
                 LOGGER.debug("Indexing content of {} with mimetype {}", recordId, mimeType);
                 String content = new String(record.getContent(), StandardCharsets.UTF_8);
                 try {
+                    Stopwatch stopwatch = new Stopwatch();
                     worker.addFields(doc, content, mimeType);
+                    LOGGER_STOPWATCH.info("Javascript took {} ms", stopwatch.getElapsedTime(TimeUnit.MILLISECONDS));
                 } catch (Exception ex) {
                     LOGGER.error("Error adding fields for document '{}': ", content, ex);
                 }
@@ -253,11 +257,10 @@ public class Indexer {
 
     private void updateSolr(RecordIdDTO jobId, SolrInputDocument doc) throws IOException, SolrServerException {
         LOGGER.debug("Adding document for {} to solr", jobId);
+        Stopwatch stopwatch = new Stopwatch();
         solrServer.add(doc);
-    }
+        LOGGER_STOPWATCH.info(" updateSolr took {} ms", stopwatch.getElapsedTime(TimeUnit.MILLISECONDS));
 
-    private void queueFail(RawRepoQueueDAO dao, QueueItem job, String error) throws QueueException {
-        dao.queueFail(job, error);
     }
 
     private void commit(final Connection connection) throws SQLException {
