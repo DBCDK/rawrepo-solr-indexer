@@ -54,10 +54,6 @@ public class Indexer {
     @ConfigProperty(name = "WORKER", defaultValue = "WORKER not set")
     protected String WORKER;
 
-    @Inject
-    @ConfigProperty(name = "OPENAGENCY_URL", defaultValue = "OPENAGENCY_URL not set")
-    protected String openAgencyUrl;
-
     @Resource(lookup = "jdbc/rawrepo")
     protected DataSource rawrepoDataSource;
 
