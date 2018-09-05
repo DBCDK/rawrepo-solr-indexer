@@ -100,20 +100,13 @@ public class Indexer {
             throw new SolrIndexerSolrException("Could not connect to the solr server. " + ex.getMessage(), ex);
         }
 
-        final Stopwatch stopwatch = new Stopwatch();
-
         while (moreWork) {
             try (Connection connection = getConnection()) {
                 final RawRepoQueueDAO dao = createDAO(connection);
                 try {
-                    stopwatch.reset();
                     final QueueItem job = queueBean.dequeueJob(dao, WORKER);
-                    long dequeueDurationInMS = stopwatch.getElapsedTime(TimeUnit.MILLISECONDS);
 
                     if (job != null) {
-
-                        LOGGER_STOPWATCH.info("dequeueJob took {} ms", dequeueDurationInMS);
-
                         MDC.put(TRACKING_ID, createTrackingId(job)); // Early trackingId as we don't yet have the record
                         processJob(job, dao);
                         commit(connection);
@@ -259,7 +252,7 @@ public class Indexer {
         LOGGER.debug("Adding document for {} to solr", jobId);
         Stopwatch stopwatch = new Stopwatch();
         solrServer.add(doc);
-        LOGGER_STOPWATCH.info(" updateSolr took {} ms", stopwatch.getElapsedTime(TimeUnit.MILLISECONDS));
+        LOGGER_STOPWATCH.info("updateSolr took {} ms", stopwatch.getElapsedTime(TimeUnit.MILLISECONDS));
 
     }
 
