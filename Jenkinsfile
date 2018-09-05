@@ -110,7 +110,7 @@ pipeline {
             steps {
                 script {
                     lock('meta-rawrepo-solr-indexer-updateservice-deploy-staging') {
-                        echo "Deploy not yet working so skip"
+                        deploy("basismig")
                     }
                 }
             }
