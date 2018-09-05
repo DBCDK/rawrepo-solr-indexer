@@ -7,7 +7,7 @@ USER=${USER:-WHAT}    # silencing annoying intellij syntax quibble
 
 package=solr
 cid_file=solr.cid
-docker_image="docker-os.dbc.dk/dbc-solr-1.0-snapshotx"
+docker_image="solrserver-updateservice"
 version=${USER}
 port=`id -u ${USER}`5
 detached="-d"
@@ -34,15 +34,13 @@ if [ "$version" = "${USER}" ]
 then
 	# It's a bit dirty, but schema.xml is the only thing that are expected to change
 	# so if solr-indexer/target and/or solr/target exist, they will not be rebuild (takes a small war)
-	hop=`pwd`
-    cd solr-indexer
 	if [ ! -d target ]
 	then
 		mvn clean verify > /tmp/mvn.out.${USER}.solr-indexer
 	fi
-	cd ${hop}
+	echo ${pwd}
 	rm -rf solr/docker/rawrepo-solr-indexer-solr-config-zip
-	unzip target/rawrepo-solr-indexer-1.10-SNAPSHOT-solr-config.zip -d solr/docker/rawrepo-solr-indexer-solr-config-zip
+	unzip target/rawrepo-solr-indexer-updateservice-1.10-SNAPSHOT-solr-config.zip -d solr/docker/rawrepo-solr-indexer-solr-config-zip
     cd solr/docker
     docker build -t ${docker_image}:${version} .
     cc=$?
