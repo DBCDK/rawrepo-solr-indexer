@@ -108,7 +108,7 @@ public class Indexer {
                     final QueueItem job = queueBean.dequeueJob(dao, WORKER);
 
                     if (job != null) {
-                        MDC.put(TRACKING_ID, createTrackingId(job)); // Early trackingId as we don't yet have the record
+                        MDC.put(TRACKING_ID, createTrackingId()); // Early trackingId as we don't yet have the record
                         processJob(job, dao);
                         commit(connection);
                         processedJobs++;
@@ -261,14 +261,14 @@ public class Indexer {
         connection.commit();
     }
 
-    private static String createTrackingId(QueueItem job) {
+    private static String createTrackingId() {
         return UUID.randomUUID().toString();
     }
 
     private static String createTrackingId(QueueItem job, RecordDTO record) {
         String trackingId = record.getTrackingId();
         if (trackingId == null || trackingId.isEmpty()) {
-            return createTrackingId(job);
+            return createTrackingId();
         } else {
             return trackingId;
         }
