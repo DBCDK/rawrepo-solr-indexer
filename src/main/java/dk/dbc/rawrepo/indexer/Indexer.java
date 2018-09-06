@@ -163,7 +163,7 @@ public class Indexer {
                 LOGGER.info("record from {} does not exist, most likely queued by dependency", job);
                 return;
             }
-            MDC.put(TRACKING_ID, createTrackingId(job, record));
+            MDC.put(TRACKING_ID, createTrackingId(record));
             if (record.isDeleted()) {
                 deleteSolrDocument(jobId);
             } else {
@@ -265,7 +265,7 @@ public class Indexer {
         return UUID.randomUUID().toString();
     }
 
-    private static String createTrackingId(QueueItem job, RecordDTO record) {
+    private static String createTrackingId(RecordDTO record) {
         String trackingId = record.getTrackingId();
         if (trackingId == null || trackingId.isEmpty()) {
             return createTrackingId();
