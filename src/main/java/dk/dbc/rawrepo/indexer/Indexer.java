@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -261,7 +262,7 @@ public class Indexer {
     }
 
     private static String createTrackingId(QueueItem job) {
-        return "RawRepoIndexer:" + job.toString();
+        return UUID.randomUUID().toString();
     }
 
     private static String createTrackingId(QueueItem job, RecordDTO record) {
@@ -269,7 +270,7 @@ public class Indexer {
         if (trackingId == null || trackingId.isEmpty()) {
             return createTrackingId(job);
         } else {
-            return createTrackingId(job) + "<" + trackingId;
+            return trackingId;
         }
     }
 }
