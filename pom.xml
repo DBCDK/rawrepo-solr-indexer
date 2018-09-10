@@ -7,10 +7,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>rawrepo-solr-indexer-updateservice</artifactId>
+    <artifactId>rawrepo-solr-indexer</artifactId>
     <packaging>war</packaging>
-    <name>rawrepo-solr-indexer-updateservice</name>
-    <version>1.10-SNAPSHOT</version>
+    <name>rawrepo-solr-indexer</name>
+    <version>2.0-SNAPSHOT</version>
 
     <parent>
         <groupId>dk.dbc</groupId>
