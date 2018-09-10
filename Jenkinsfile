@@ -24,8 +24,8 @@ void deploy(String deployEnvironment) {
             source bin/activate
             pip3 install --upgrade pip
             pip3 install -U -e \"git+https://github.com/DBCDK/mesos-tools.git#egg=mesos-tools\"
-            marathon-config-producer rawrepo-solr-indexer-updateservice-${deployEnvironment} --root deploy/marathon --template-keys DOCKER_TAG=${DOCKER_IMAGE_VERSION} -o rawrepo-solr-indexer-updateservice-${deployEnvironment}.json
-            marathon-deployer -a ${MARATHON_TOKEN} -b https://mcp1.dbc.dk:8443 deploy rawrepo-solr-indexer-updateservice-${deployEnvironment}.json
+            marathon-config-producer rawrepo-solr-indexer-${deployEnvironment} --root deploy/marathon --template-keys DOCKER_TAG=${DOCKER_IMAGE_VERSION} -o rawrepo-solr-indexer-${deployEnvironment}.json
+            marathon-deployer -a ${MARATHON_TOKEN} -b https://mcp1.dbc.dk:8443 deploy rawrepo-solr-indexer-${deployEnvironment}.json
         '
 	"""
 }
@@ -83,7 +83,7 @@ pipeline {
             }
             steps {
                 script {
-                    def image = docker.build("docker-io.dbc.dk/rawrepo-solr-indexer-updateservice:${DOCKER_IMAGE_VERSION}",
+                    def image = docker.build("docker-io.dbc.dk/rawrepo-solr-indexer:${DOCKER_IMAGE_VERSION}",
                                                 " --label jobname=${env.JOB_NAME}" +
                                                 " --label gitcommit=${env.GIT_COMMIT}" +
                                                 " --label buildnumber=${env.BUILD_NUMBER}" +
@@ -93,8 +93,8 @@ pipeline {
 
                     if (env.BRANCH_NAME == 'develop') {
                         sh """
-                            docker tag docker-io.dbc.dk/rawrepo-solr-indexer-updateservice:${DOCKER_IMAGE_VERSION} docker-io.dbc.dk/rawrepo-solr-indexer-updateservice:${DOCKER_IMAGE_DIT_VERSION}
-                            docker push docker-io.dbc.dk/rawrepo-solr-indexer-updateservice:${DOCKER_IMAGE_DIT_VERSION}
+                            docker tag docker-io.dbc.dk/rawrepo-solr-indexer:${DOCKER_IMAGE_VERSION} docker-io.dbc.dk/rawrepo-solr-indexer:${DOCKER_IMAGE_DIT_VERSION}
+                            docker push docker-io.dbc.dk/rawrepo-solr-indexer:${DOCKER_IMAGE_DIT_VERSION}
                         """
                     }
                 }
@@ -109,8 +109,9 @@ pipeline {
             }
             steps {
                 script {
-                    lock('meta-rawrepo-solr-indexer-updateservice-deploy-staging') {
+                    lock('meta-rawrepo-solr-indexer-deploy-staging') {
                         deploy("basismig")
+                        deploy("fbstest")
                     }
                 }
             }
@@ -124,8 +125,9 @@ pipeline {
             }
             steps {
                 script {
-                    lock('meta-rawrepo-solr-indexer-updateservice-deploy-prod') {
-                        echo "Deploy not yet working so skip"
+                    lock('meta-rawrepo-solr-indexer-deploy-prod') {
+                        deploy("boblebad")
+                        deploy("cisterne")
                     }
                 }
             }
