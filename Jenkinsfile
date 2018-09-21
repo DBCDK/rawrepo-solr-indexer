@@ -94,7 +94,7 @@ pipeline {
                 	sh "rm -rf solr/docker/rawrepo-solr-indexer-solr-config-zip"
 	                sh "unzip target/rawrepo-solr-indexer-2.0-SNAPSHOT-solr-config.zip -d solr/docker/rawrepo-solr-indexer-solr-config-zip"
 
-                    def solr = docker.build("docker-io.dbc.dk/rawrepo-solr-server:${DOCKER_IMAGE_VERSION}"),
+                    def solr = docker.build("docker-io.dbc.dk/rawrepo-solr-server:${DOCKER_IMAGE_VERSION}",
                                                 " --label jobname=${env.JOB_NAME}" +
                                                 " --label gitcommit=${env.GIT_COMMIT}" +
                                                 " --label buildnumber=${env.BUILD_NUMBER}" +
