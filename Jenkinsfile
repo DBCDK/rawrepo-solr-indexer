@@ -99,7 +99,7 @@ pipeline {
                                                 " --label gitcommit=${env.GIT_COMMIT}" +
                                                 " --label buildnumber=${env.BUILD_NUMBER}" +
                                                 " --label user=isworker" +
-                                                " solr/docker/Dockerfile")
+                                                " solr/docker")
                     solr.push()
 
                     if (env.BRANCH_NAME == 'develop') {
