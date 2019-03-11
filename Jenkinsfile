@@ -75,6 +75,12 @@ pipeline {
             }
         }
 
+        stage("Archive artifacts") {
+            steps {
+                archiveArtifacts(artifacts: "target/rawrepo-solr-indexer-2.0-SNAPSHOT-solr-config.zip")
+            }
+        }
+
         stage("Docker build") {
             when {
                 expression {
@@ -83,6 +89,7 @@ pipeline {
             }
             steps {
                 script {
+                    // Build and push indexer
                     def image = docker.build("docker-io.dbc.dk/rawrepo-solr-indexer:${DOCKER_IMAGE_VERSION}",
                                                 " --label jobname=${env.JOB_NAME}" +
                                                 " --label gitcommit=${env.GIT_COMMIT}" +
@@ -91,6 +98,7 @@ pipeline {
                                                 " .")
                     image.push()
 
+                    // Build and push solr server
                 	sh "rm -rf solr/docker/rawrepo-solr-indexer-solr-config-zip"
 	                sh "unzip target/rawrepo-solr-indexer-2.0-SNAPSHOT-solr-config.zip -d solr/docker/rawrepo-solr-indexer-solr-config-zip"
 
@@ -102,7 +110,7 @@ pipeline {
                                                 " solr/docker")
                     solr.push()
 
-                    if (env.BRANCH_NAME == 'develop') {
+                    if (env.BRANCH_NAME == 'master') {
                         sh """
                             docker tag docker-io.dbc.dk/rawrepo-solr-indexer:${DOCKER_IMAGE_VERSION} docker-io.dbc.dk/rawrepo-solr-indexer:${DOCKER_IMAGE_DIT_VERSION}
                             docker push docker-io.dbc.dk/rawrepo-solr-indexer:${DOCKER_IMAGE_DIT_VERSION}
@@ -110,38 +118,6 @@ pipeline {
                             docker tag docker-io.dbc.dk/rawrepo-solr-server:${DOCKER_IMAGE_VERSION} docker-io.dbc.dk/rawrepo-solr-server:${DOCKER_IMAGE_DIT_VERSION}
                             docker push docker-io.dbc.dk/rawrepo-solr-server:${DOCKER_IMAGE_DIT_VERSION}
                         """
-                    }
-                }
-            }
-        }
-
-        stage("Deploy to staging") {
-            when {
-                expression {
-                    (currentBuild.result == null || currentBuild.result == 'SUCCESS') && env.BRANCH_NAME == 'develop'
-                }
-            }
-            steps {
-                script {
-                    lock('meta-rawrepo-solr-indexer-deploy-staging') {
-                        deploy("basismig")
-                        deploy("fbstest")
-                    }
-                }
-            }
-        }
-
-        stage("Deploy to prod") {
-            when {
-                expression {
-                    (currentBuild.result == null || currentBuild.result == 'SUCCESS') && env.BRANCH_NAME == 'master'
-                }
-            }
-            steps {
-                script {
-                    lock('meta-rawrepo-solr-indexer-deploy-prod') {
-                        deploy("boblebad")
-                        deploy("cisterne")
                     }
                 }
             }
