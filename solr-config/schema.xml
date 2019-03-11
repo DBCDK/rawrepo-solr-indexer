@@ -219,13 +219,6 @@
             </analyzer>
         </fieldType>
 
-        <fieldType name="dk.dbc-faust" class="solr.TextField" sortMissingLast="true" omitNorms="true" multiValued="true">
-            <analyzer>
-                <charFilter class="solr.PatternReplaceCharFilterFactory" pattern="[^0-9]" replacement=""/>
-                <tokenizer class="solr.PatternTokenizerFactory" pattern="^(.*)$" group="1"/>
-            </analyzer>
-        </fieldType>
-
         <fieldType name="dk.dbc-doc-id" class="solr.TextField" sortMissingLast="true" omitNorms="true" multiValued="true">
             <analyzer>
                 <charFilter class="solr.PatternReplaceCharFilterFactory" pattern="\s" replacement=""/>
@@ -271,12 +264,12 @@
         <!-- -->
         <field name="id" type="id" indexed="true" stored="true" required="true"/>
         <field name="marc.001a001b" type="dk.dbc-analyzed-id" indexed="true" stored="true" required="false"/>
-        <field name="marc.001a" type="dk.dbc-faust" indexed="true" stored="true" required="false"/>
+        <field name="marc.001a" type="dk.dbc-analyzed-id" indexed="true" stored="true" required="false"/>
         <field name="marc.001b" type="int" indexed="true" stored="true" required="false"/>
         <field name="marc.001c" type="date" indexed="true" stored="true" required="false"/>
         <field name="marc.001d" type="date" indexed="true" stored="true" required="false"/>
 
-        <field name="marc.002a" type="dk.dbc-faust" indexed="true" stored="true" required="false" multiValued="true"/>
+        <field name="marc.002a" type="dk.dbc-analyzed-id" indexed="true" stored="true" required="false" multiValued="true"/>
         <field name="marc.002b" type="dk.dbc-analyzed-id" indexed="true" stored="true" required="false"
                multiValued="true"/>
         <field name="marc.002c" type="dk.dbc-doc-id" indexed="true" stored="true" required="false" multiValued="true"/>
@@ -409,18 +402,11 @@
         <copyField source="rec.bibliographicRecordId" dest="default"/>
         <copyField source="rec.agencyId" dest="default"/>
         <copyField source="rec.trackingId" dest="default"/>
-
     </fields>
 
     <!-- Field to use to determine and enforce document uniqueness.
          Unless this field is marked with required="false", it will be a required field
       -->
     <uniqueKey>id</uniqueKey>
-
-    <!-- field for the QueryParser to use when an explicit fieldname is absent -->
-    <defaultSearchField>default</defaultSearchField>
-
-    <!-- SolrQueryParser configuration: defaultOperator="AND|OR" -->
-    <solrQueryParser defaultOperator="AND"/>
 
 </schema>

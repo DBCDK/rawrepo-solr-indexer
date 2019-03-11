@@ -475,7 +475,7 @@
              be based on the last SolrCore to be initialized.
 
           -->
-        <maxBooleanClauses>1024</maxBooleanClauses>
+        <maxBooleanClauses>4096</maxBooleanClauses>
 
 
         <!-- Solr Internal Query Caches
@@ -731,6 +731,7 @@
 
           -->
         <requestParsers enableRemoteStreaming="true"
+                        enableStreamBody="true"
                         multipartUploadLimitInKB="2048000"
                         formdataUploadLimitInKB="2048"
                         addHttpRequestToContext="false"/>
@@ -825,6 +826,8 @@
         <lst name="defaults">
             <str name="echoParams">explicit</str>
             <int name="rows">10</int>
+            <str name="q.op">AND</str>
+            <str name="df">default</str>
         </lst>
         <!-- In addition to defaults, "appends" params can be specified
              to identify values which should be appended to the list of
@@ -932,7 +935,7 @@
             <!-- Query settings -->
             <str name="defType">edismax</str>
             <str name="qf">default</str>
-            <str name="df">default</str>
+            <str name="q.op">AND</str>
             <str name="mm">100%</str>
             <str name="q.alt">*:*</str>
             <str name="rows">10</str>

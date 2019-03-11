@@ -40,7 +40,7 @@ then
 	fi
 	echo ${pwd}
 	rm -rf solr/docker/rawrepo-solr-indexer-solr-config-zip
-	unzip target/rawrepo-solr-indexer-updateservice-1.10-SNAPSHOT-solr-config.zip -d solr/docker/rawrepo-solr-indexer-solr-config-zip
+	unzip target/rawrepo-solr-indexer-2.0-SNAPSHOT-solr-config.zip -d solr/docker/rawrepo-solr-indexer-solr-config-zip
     cd solr/docker
     docker build -t ${docker_image}:${version} .
     cc=$?
