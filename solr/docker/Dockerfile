@@ -1,5 +1,4 @@
-FROM docker-io.dbc.dk/dbc-solr6-1.0-snapshot:latest
-MAINTAINER iscrum
+FROM docker-os.dbc.dk/dbc-solr-1.0-snapshot:212
 
 ENV RAWREPO_HOME $SOLR_BASE/server/solr/rawrepo
 
@@ -17,3 +16,4 @@ LABEL DBC_AUTOCOMMIT_MAXDOCS="Default is to use solrconfig file default - NB doe
 LABEL DBC_AUTOCOMMIT_OPENSEARCHER="Default is to use solrconfig file default - NB doesnt have any effect pt"
 LABEL SOLR_AUTOSOFTCOMMIT_MAXTIME="Default is to use solrconfig file default"
 LABEL DBC_AUTOSOFTCOMMIT_MAXDOCS="Default is to use solrconfig file default - NB doesnt have any effect pt, probably never will"
+LABEL MAINTAINER="meta-scrum"
