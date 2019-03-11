@@ -219,13 +219,6 @@
             </analyzer>
         </fieldType>
 
-        <fieldType name="dk.dbc-faust" class="solr.TextField" sortMissingLast="true" omitNorms="true" multiValued="true">
-            <analyzer>
-                <charFilter class="solr.PatternReplaceCharFilterFactory" pattern="[^0-9]" replacement=""/>
-                <tokenizer class="solr.PatternTokenizerFactory" pattern="^(.*)$" group="1"/>
-            </analyzer>
-        </fieldType>
-
         <fieldType name="dk.dbc-doc-id" class="solr.TextField" sortMissingLast="true" omitNorms="true" multiValued="true">
             <analyzer>
                 <charFilter class="solr.PatternReplaceCharFilterFactory" pattern="\s" replacement=""/>
@@ -271,12 +264,12 @@
         <!-- -->
         <field name="id" type="id" indexed="true" stored="true" required="true"/>
         <field name="marc.001a001b" type="dk.dbc-analyzed-id" indexed="true" stored="true" required="false"/>
-        <field name="marc.001a" type="dk.dbc-faust" indexed="true" stored="true" required="false"/>
+        <field name="marc.001a" type="dk.dbc-analyzed-id" indexed="true" stored="true" required="false"/>
         <field name="marc.001b" type="int" indexed="true" stored="true" required="false"/>
         <field name="marc.001c" type="date" indexed="true" stored="true" required="false"/>
         <field name="marc.001d" type="date" indexed="true" stored="true" required="false"/>
 
-        <field name="marc.002a" type="dk.dbc-faust" indexed="true" stored="true" required="false" multiValued="true"/>
+        <field name="marc.002a" type="dk.dbc-analyzed-id" indexed="true" stored="true" required="false" multiValued="true"/>
         <field name="marc.002b" type="dk.dbc-analyzed-id" indexed="true" stored="true" required="false"
                multiValued="true"/>
         <field name="marc.002c" type="dk.dbc-doc-id" indexed="true" stored="true" required="false" multiValued="true"/>
