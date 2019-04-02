@@ -372,9 +372,9 @@
           -->
         <autoCommit>
             <!-- These default setting can be overwritten by deploy script -->
-            <maxTime>60000</maxTime>
+            <maxTime>1000</maxTime>
             <maxDocs>5000</maxDocs>
-            <openSearcher>true</openSearcher>
+            <openSearcher>false</openSearcher>
         </autoCommit>
 
         <!-- softAutoCommit is like autoCommit except it causes a
