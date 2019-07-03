@@ -1,4 +1,4 @@
-FROM docker.dbc.dk/payara-micro:latest
+FROM docker.dbc.dk/payara5-micro:latest
 
 ENV KAFKA_LOG_APPNAME rawrepo-solr-indexer
 
