@@ -1,10 +1,9 @@
-FROM docker.dbc.dk/payara-micro:latest
+FROM docker.dbc.dk/payara5-micro:latest
 
 ENV KAFKA_LOG_APPNAME rawrepo-solr-indexer
 
-ADD docker/config.d/* config.d
-ADD target/*.war wars
-
+COPY target/*.war deployments
+COPY target/docker/config.json deployments
 ENV LOGBACK_FILE file:///data/logback-include-stdout.xml
 
 LABEL RAWREPO_URL="Raw repo jdbc url. (required). Ex.: 'user:pass@host:1234/dbname'" \
