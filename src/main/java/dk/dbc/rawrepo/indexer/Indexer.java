@@ -6,6 +6,7 @@
 package dk.dbc.rawrepo.indexer;
 
 import dk.dbc.rawrepo.RecordData;
+import dk.dbc.rawrepo.RecordServiceConnector;
 import dk.dbc.rawrepo.RecordServiceConnectorException;
 import dk.dbc.rawrepo.exception.SolrIndexerRawRepoException;
 import dk.dbc.rawrepo.exception.SolrIndexerSolrException;
@@ -60,8 +61,8 @@ public class Indexer {
     @Resource(lookup = "jdbc/rawrepo")
     protected DataSource rawrepoDataSource;
 
-    @EJB
-    private RawRepoRecordBean recordBean;
+    @Inject
+    private RecordServiceConnector recordServiceConnector;
 
     @EJB
     private RawRepoQueueBean queueBean;
@@ -190,10 +191,10 @@ public class Indexer {
     }
 
     private RecordData fetchRecord(RecordData.RecordId jobid) throws QueueException, RecordServiceConnectorException {
-        if (!recordBean.recordExistsMaybeDeleted(jobid.getBibliographicRecordId(), jobid.getAgencyId())) {
+        if (!recordServiceConnector.recordExists(jobid.getAgencyId(), jobid.getBibliographicRecordId())) {
             return null;
         } else {
-            return recordBean.fetchRecord(jobid.getBibliographicRecordId(), jobid.getAgencyId());
+            return recordServiceConnector.getRecordData(jobid.getAgencyId(), jobid.getBibliographicRecordId());
         }
     }
 
