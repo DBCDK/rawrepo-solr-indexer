@@ -84,7 +84,7 @@ public class IndexerIT {
         RawRepoQueueDAO dao = RawRepoQueueDAO.builder(connection).build();
         assertFalse(dao.recordExists(BIBLIOGRAPHIC_RECORD_ID, AGENCY_ID));
 
-        RecordDTO record1 = dao.fetchRecord(BIBLIOGRAPHIC_RECORD_ID, AGENCY_ID);
+        RecordData record1 = dao.fetchRecord(BIBLIOGRAPHIC_RECORD_ID, AGENCY_ID);
         record1.setContent("First edition".getBytes());
         record1.setMimetype(MarcXChangeMimeType.MARCXCHANGE);
         dao.saveRecord(record1);

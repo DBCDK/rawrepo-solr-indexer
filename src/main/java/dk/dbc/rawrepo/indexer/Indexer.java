@@ -5,13 +5,14 @@
 
 package dk.dbc.rawrepo.indexer;
 
-import dk.dbc.rawrepo.dto.RecordDTO;
-import dk.dbc.rawrepo.dto.RecordIdDTO;
+import dk.dbc.rawrepo.RecordData;
+import dk.dbc.rawrepo.RecordServiceConnectorException;
 import dk.dbc.rawrepo.exception.SolrIndexerRawRepoException;
 import dk.dbc.rawrepo.exception.SolrIndexerSolrException;
 import dk.dbc.rawrepo.queue.QueueException;
 import dk.dbc.rawrepo.queue.QueueItem;
 import dk.dbc.rawrepo.queue.RawRepoQueueDAO;
+
 import dk.dbc.util.Stopwatch;
 import dk.dbc.util.Timed;
 import org.apache.solr.client.solrj.SolrServer;
@@ -90,7 +91,7 @@ public class Indexer {
         solrServer.shutdown();
     }
 
-    public void performWork() throws SolrIndexerRawRepoException, SolrIndexerSolrException {
+    public void performWork() throws SolrIndexerRawRepoException, SolrIndexerSolrException, RecordServiceConnectorException {
         boolean moreWork = true;
         int processedJobs = 0;
 
@@ -149,16 +150,14 @@ public class Indexer {
     }
 
     @Timed
-    public void processJob(QueueItem job, RawRepoQueueDAO dao) throws QueueException, SolrIndexerSolrException {
+    public void processJob(QueueItem job, RawRepoQueueDAO dao) throws QueueException, SolrIndexerSolrException,RecordServiceConnectorException {
         LOGGER.info("Indexing {}", job);
         final Stopwatch stopwatch = new Stopwatch();
 
-        final RecordIdDTO jobId = new RecordIdDTO();
-        jobId.setBibliographicRecordId(job.getBibliographicRecordId());
-        jobId.setAgencyId(job.getAgencyId());
+        final RecordData.RecordId jobId = new RecordData.RecordId( job.getBibliographicRecordId(), job.getAgencyId() );
         LOGGER.info("---------------------------------------------------------------");
         try {
-            final RecordDTO record = fetchRecord(jobId);
+            final RecordData record = fetchRecord(jobId);
             if (record == null) {
                 LOGGER.info("record from {} does not exist, most likely queued by dependency", job);
                 return;
@@ -190,7 +189,7 @@ public class Indexer {
         }
     }
 
-    private RecordDTO fetchRecord(RecordIdDTO jobid) throws QueueException {
+    private RecordData fetchRecord(RecordData.RecordId jobid) throws QueueException, RecordServiceConnectorException {
         if (!recordBean.recordExistsMaybeDeleted(jobid.getBibliographicRecordId(), jobid.getAgencyId())) {
             return null;
         } else {
@@ -198,7 +197,7 @@ public class Indexer {
         }
     }
 
-    private String createSolrDocumentId(RecordIdDTO recordId) {
+    private String createSolrDocumentId(RecordData.RecordId recordId) {
         LOGGER.entry();
         String result = null;
         try {
@@ -210,9 +209,9 @@ public class Indexer {
         }
     }
 
-    SolrInputDocument createIndexDocument(RecordDTO record) {
+    SolrInputDocument createIndexDocument(RecordData record) {
         final SolrInputDocument doc = new SolrInputDocument();
-        RecordIdDTO recordId = record.getRecordId();
+        RecordData.RecordId recordId = record.getRecordId();
         doc.addField("id", createSolrDocumentId(recordId));
 
         String mimeType = record.getMimetype();
@@ -244,12 +243,12 @@ public class Indexer {
         return doc;
     }
 
-    private void deleteSolrDocument(RecordIdDTO jobId) throws IOException, SolrServerException {
+    private void deleteSolrDocument(RecordData.RecordId jobId) throws IOException, SolrServerException {
         LOGGER.debug("Deleting document for {} to solr", jobId);
         solrServer.deleteById(createSolrDocumentId(jobId));
     }
 
-    private void updateSolr(RecordIdDTO jobId, SolrInputDocument doc) throws IOException, SolrServerException {
+    private void updateSolr(RecordData.RecordId jobId, SolrInputDocument doc) throws IOException, SolrServerException {
         LOGGER.debug("Adding document for {} to solr", jobId);
         Stopwatch stopwatch = new Stopwatch();
         solrServer.add(doc);
@@ -265,7 +264,7 @@ public class Indexer {
         return UUID.randomUUID().toString();
     }
 
-    private static String createTrackingId(RecordDTO record) {
+    private static String createTrackingId(RecordData record) {
         String trackingId = record.getTrackingId();
         if (trackingId == null || trackingId.isEmpty()) {
             return createTrackingId();

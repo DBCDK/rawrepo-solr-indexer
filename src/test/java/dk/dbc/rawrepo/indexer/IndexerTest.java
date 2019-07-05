@@ -5,8 +5,7 @@
 
 package dk.dbc.rawrepo.indexer;
 
-import dk.dbc.rawrepo.dto.RecordDTO;
-import dk.dbc.rawrepo.dto.RecordIdDTO;
+import dk.dbc.rawrepo.RecordData;
 import org.apache.solr.common.SolrInputDocument;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -17,10 +16,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.FormatStyle;
 import java.time.temporal.ChronoField;
 import java.util.Date;
-import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -30,33 +27,76 @@ import static org.junit.Assert.assertNull;
  */
 public class IndexerTest {
 
+
+    private class RecordDataTest extends RecordData {
+        private String modifiedTest;
+        private String createdTest;
+        private String mimetypeTest;
+        private RecordData.RecordId recordIdTest;
+
+        public RecordDataTest() {
+            super();
+        }
+
+        public void setModified(String date) {
+            this.modifiedTest = date;
+        }
+
+        @Override
+        public String getModified() {
+            return this.modifiedTest;
+        }
+
+        public void setCreated(String date) {
+            this.createdTest = date;
+        }
+
+        @Override
+        public String getCreated() {
+            return this.createdTest;
+        }
+
+        public void setMimetype(String mimetype) {
+            this.mimetypeTest = mimetype;
+        }
+
+        @Override
+        public String getMimetype() {
+            return this.mimetypeTest;
+        }
+
+        public void setRecordId( RecordData.RecordId recordId ) {
+            this.recordIdTest = recordId;
+        }
+
+        @Override
+        public RecordData.RecordId getRecordId() {
+            return this.recordIdTest;
+        }
+
+    }
+
     private static final DateTimeFormatter formatter = new DateTimeFormatterBuilder()
             .appendPattern("yyyyMMdd")
             .parseDefaulting(ChronoField.NANO_OF_DAY, 0)
             .toFormatter()
             .withZone(ZoneId.of("Europe/Copenhagen"));
 
-    private RecordDTO createRecordDTO(String bibliographicRecordId,
+    private RecordData createRecordData(String bibliographicRecordId,
                                       int agencyId,
                                       byte[] content,
                                       Instant created,
                                       Instant modified,
                                       boolean deleted,
                                       String mimetype) {
-
-        RecordIdDTO recordIdDTO = new RecordIdDTO();
-        recordIdDTO.setBibliographicRecordId(bibliographicRecordId);
-        recordIdDTO.setAgencyId(agencyId);
-
-        RecordDTO recordDTO = new RecordDTO();
-        recordDTO.setRecordId(recordIdDTO);
-        recordDTO.setContent(content);
-        recordDTO.setCreated(created.toString());
-        recordDTO.setModified(modified.toString());
-        recordDTO.setDeleted(deleted);
-        recordDTO.setMimetype(mimetype);
-
-        return recordDTO;
+        RecordDataTest recordData = new RecordDataTest();
+        recordData.setContent(content);
+        recordData.setCreated(created.toString());
+        recordData.setModified(modified.toString());
+        recordData.setDeleted(deleted);
+        recordData.setMimetype(mimetype);
+        recordData.setRecordId( new RecordData.RecordId( bibliographicRecordId, agencyId) );
+        return recordData;
     }
 
     private static Indexer createInstance() {
@@ -192,7 +232,7 @@ public class IndexerTest {
                 + "      </marcx:datafield>\n"
                 + "    </marcx:record>";
 
-        RecordDTO record = createRecordDTO("id", 123456, content.getBytes(), created, modified, true, Indexer.MIMETYPE_MARCXCHANGE);
+        RecordData record = createRecordData("id", 123456, content.getBytes(), created, modified, true, Indexer.MIMETYPE_MARCXCHANGE);
 
         Indexer indexer = createInstance();
         indexer.worker = new JavaScriptWorker();
@@ -223,7 +263,7 @@ public class IndexerTest {
         Instant modified = new Date(200).toInstant();
         String content = ">hello world<";
 
-        RecordDTO record = createRecordDTO("id", 123456, content.getBytes(), created, modified, true, Indexer.MIMETYPE_MARCXCHANGE);
+        RecordData record = createRecordData("id", 123456, content.getBytes(), created, modified, true, Indexer.MIMETYPE_MARCXCHANGE);
 
         Indexer indexer = createInstance();
         indexer.worker = new JavaScriptWorker();
@@ -249,7 +289,7 @@ public class IndexerTest {
         Instant modified = new Date(200).toInstant();
         String content = "";
 
-        RecordDTO record = createRecordDTO("id", 123456, content.getBytes(), created, modified, true, "DUMMY");
+        RecordData record = createRecordData("id", 123456, content.getBytes(), created, modified, true, "DUMMY");
 
         Indexer indexer = createInstance();
         indexer.worker = new JavaScriptWorker();
