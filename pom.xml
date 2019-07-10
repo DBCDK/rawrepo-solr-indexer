@@ -141,6 +141,11 @@
             <artifactId>jackson-mapper-asl</artifactId>
             <version>1.9.13</version>
         </dependency>
+        <dependency>
+            <groupId>dk.dbc</groupId>
+            <artifactId>rawrepo-record-service-connector</artifactId>
+            <version>1.2-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>
