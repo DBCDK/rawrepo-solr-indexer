@@ -67,16 +67,16 @@ public class Indexer {
     @EJB
     private RawRepoQueueBean queueBean;
 
-    static final String MIMETYPE_MARCXCHANGE = "text/marcxchange";
-    static final String MIMETYPE_ENRICHMENT = "text/enrichment+marcxchange";
-    static final String MIMETYPE_ARTICLE = "text/article+marcxchange";
-    static final String MIMETYPE_AUTHORITY = "text/authority+marcxchange";
+    private static final String MIMETYPE_MARCXCHANGE = "text/marcxchange";
+    private static final String MIMETYPE_ENRICHMENT = "text/enrichment+marcxchange";
+    private static final String MIMETYPE_ARTICLE = "text/article+marcxchange";
+    private static final String MIMETYPE_AUTHORITY = "text/authority+marcxchange";
 
     JavaScriptWorker worker;
 
     private SolrServer solrServer;
 
-    public Indexer() {
+    Indexer() {
         this.solrServer = null;
     }
 
@@ -92,7 +92,7 @@ public class Indexer {
         solrServer.shutdown();
     }
 
-    public void performWork() throws SolrIndexerRawRepoException, SolrIndexerSolrException, RecordServiceConnectorException {
+    void performWork() throws SolrIndexerRawRepoException, SolrIndexerSolrException, RecordServiceConnectorException {
         boolean moreWork = true;
         int processedJobs = 0;
 
@@ -140,7 +140,7 @@ public class Indexer {
         }
     }
 
-    protected Connection getConnection() throws SQLException {
+    private Connection getConnection() throws SQLException {
         final Connection connection = rawrepoDataSource.getConnection();
         connection.setAutoCommit(false);
         return connection;
@@ -151,7 +151,7 @@ public class Indexer {
     }
 
     @Timed
-    public void processJob(QueueItem job, RawRepoQueueDAO dao) throws QueueException, SolrIndexerSolrException,RecordServiceConnectorException {
+    private void processJob(QueueItem job, RawRepoQueueDAO dao) throws QueueException, SolrIndexerSolrException,RecordServiceConnectorException {
         LOGGER.info("Indexing {}", job);
         final Stopwatch stopwatch = new Stopwatch();
 
@@ -171,9 +171,6 @@ public class Indexer {
                 updateSolr(jobId, doc);
             }
             LOGGER.info("Indexed {}", job);
-        } catch (QueueException ex) {
-            LOGGER.error("Queued record does not exist {}", job);
-            queueBean.queueFail(dao, job, ex.getMessage());
         } catch (HttpSolrServer.RemoteSolrException ex) {
             // Index is missing on the solr server so we need to stop now
             if (ex.getMessage().contains("unknown field")) {
@@ -190,11 +187,14 @@ public class Indexer {
         }
     }
 
-    private RecordData fetchRecord(RecordData.RecordId jobid) throws QueueException, RecordServiceConnectorException {
+    private RecordData fetchRecord(RecordData.RecordId jobid) throws RecordServiceConnectorException {
         if (!recordServiceConnector.recordExists(jobid.getAgencyId(), jobid.getBibliographicRecordId())) {
             return null;
         } else {
-            return recordServiceConnector.getRecordData(jobid.getAgencyId(), jobid.getBibliographicRecordId());
+            RecordServiceConnector.Params params = new RecordServiceConnector.Params();
+            params.withAllowDeleted(true);
+
+            return recordServiceConnector.getRecordData(jobid.getAgencyId(), jobid.getBibliographicRecordId(), params);
         }
     }
 
