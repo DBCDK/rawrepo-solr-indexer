@@ -188,12 +188,12 @@ public class Indexer {
     }
 
     private RecordData fetchRecord(RecordData.RecordId jobid) throws RecordServiceConnectorException {
-        if (!recordServiceConnector.recordExists(jobid.getAgencyId(), jobid.getBibliographicRecordId())) {
+        RecordServiceConnector.Params params = new RecordServiceConnector.Params();
+        params.withAllowDeleted(true);
+
+        if (!recordServiceConnector.recordExists(jobid.getAgencyId(), jobid.getBibliographicRecordId(), params)) {
             return null;
         } else {
-            RecordServiceConnector.Params params = new RecordServiceConnector.Params();
-            params.withAllowDeleted(true);
-
             return recordServiceConnector.getRecordData(jobid.getAgencyId(), jobid.getBibliographicRecordId(), params);
         }
     }
