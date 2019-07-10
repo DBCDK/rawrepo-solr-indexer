@@ -67,10 +67,10 @@ public class Indexer {
     @EJB
     private RawRepoQueueBean queueBean;
 
-    private static final String MIMETYPE_MARCXCHANGE = "text/marcxchange";
-    private static final String MIMETYPE_ENRICHMENT = "text/enrichment+marcxchange";
-    private static final String MIMETYPE_ARTICLE = "text/article+marcxchange";
-    private static final String MIMETYPE_AUTHORITY = "text/authority+marcxchange";
+    static final String MIMETYPE_MARCXCHANGE = "text/marcxchange";
+    static final String MIMETYPE_ENRICHMENT = "text/enrichment+marcxchange";
+    static final String MIMETYPE_ARTICLE = "text/article+marcxchange";
+    static final String MIMETYPE_AUTHORITY = "text/authority+marcxchange";
 
     JavaScriptWorker worker;
 
