@@ -76,7 +76,7 @@ public class Indexer {
 
     private SolrServer solrServer;
 
-    Indexer() {
+    public Indexer() {
         this.solrServer = null;
     }
 
@@ -92,7 +92,7 @@ public class Indexer {
         solrServer.shutdown();
     }
 
-    void performWork() throws SolrIndexerRawRepoException, SolrIndexerSolrException, RecordServiceConnectorException {
+    public void performWork() throws SolrIndexerRawRepoException, SolrIndexerSolrException, RecordServiceConnectorException {
         boolean moreWork = true;
         int processedJobs = 0;
 
@@ -140,7 +140,7 @@ public class Indexer {
         }
     }
 
-    private Connection getConnection() throws SQLException {
+    protected Connection getConnection() throws SQLException {
         final Connection connection = rawrepoDataSource.getConnection();
         connection.setAutoCommit(false);
         return connection;
@@ -151,7 +151,7 @@ public class Indexer {
     }
 
     @Timed
-    private void processJob(QueueItem job, RawRepoQueueDAO dao) throws QueueException, SolrIndexerSolrException,RecordServiceConnectorException {
+    public void processJob(QueueItem job, RawRepoQueueDAO dao) throws QueueException, SolrIndexerSolrException,RecordServiceConnectorException {
         LOGGER.info("Indexing {}", job);
         final Stopwatch stopwatch = new Stopwatch();
 
