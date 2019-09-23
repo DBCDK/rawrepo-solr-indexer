@@ -1,0 +1,10 @@
+{
+  "appName": "rawrepo-solr-indexer",
+  "jdbc": {
+    "jdbc/rawrepo": {
+      "xa": false,
+      "url": "${RAWREPO_URL}",
+      "maxSize": "100"
+    }
+  }
+}
