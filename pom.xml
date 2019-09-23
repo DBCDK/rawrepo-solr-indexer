@@ -14,10 +14,17 @@
 
     <parent>
         <groupId>dk.dbc</groupId>
-        <artifactId>dbc-pom</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <artifactId>microservice-pom</artifactId>
+        <version>latest-SNAPSHOT</version>
         <relativePath/>
     </parent>
+
+    <repositories>
+        <repository>
+            <id>mavenrepo.dbc.dk</id>
+            <url>http://mavenrepo.dbc.dk/content/groups/public/</url>
+        </repository>
+    </repositories>
 
     <properties>
         <test.classes>${project.build.directory}/test-classes</test.classes>
@@ -43,6 +50,7 @@
         <dependency>
             <groupId>dk.dbc</groupId>
             <artifactId>jscommon</artifactId>
+            <version>2012.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>dk.dbc</groupId>
@@ -133,6 +141,11 @@
             <artifactId>jackson-mapper-asl</artifactId>
             <version>1.9.13</version>
         </dependency>
+        <dependency>
+            <groupId>dk.dbc</groupId>
+            <artifactId>rawrepo-record-service-connector</artifactId>
+            <version>1.2-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -164,6 +177,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.1.1</version>
                 <executions>
                     <execution>
                         <id>solr-config</id>
@@ -187,6 +201,8 @@
                             </descriptorRefs>
                         </configuration>
                     </execution>
+
+
                 </executions>
             </plugin>
         </plugins>
