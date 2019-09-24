@@ -216,23 +216,14 @@ public class Indexer {
         doc.addField("id", createSolrDocumentId(recordId));
 
         String mimeType = record.getMimetype();
-        switch (mimeType) {
-            case MIMETYPE_MARCXCHANGE:
-            case MIMETYPE_ARTICLE:
-            case MIMETYPE_AUTHORITY:
-            case MIMETYPE_ENRICHMENT:
-                LOGGER.debug("Indexing content of {} with mimetype {}", recordId, mimeType);
-                String content = new String(record.getContent(), StandardCharsets.UTF_8);
-                try {
-                    Stopwatch stopwatch = new Stopwatch();
-                    worker.addFields(doc, content, mimeType);
-                    LOGGER_STOPWATCH.info("Javascript took {} ms", stopwatch.getElapsedTime(TimeUnit.MILLISECONDS));
-                } catch (Exception ex) {
-                    LOGGER.error("Error adding fields for document '{}': ", content, ex);
-                }
-                break;
-            default:
-                LOGGER.debug("Skipping indexing of {} with mimetype {}", recordId, mimeType);
+        LOGGER.debug("Indexing content of {} with mimetype {}", recordId, mimeType);
+        String content = new String(record.getContent(), StandardCharsets.UTF_8);
+        try {
+            Stopwatch stopwatch = new Stopwatch();
+            worker.addFields(doc, content, mimeType);
+            LOGGER_STOPWATCH.info("Javascript took {} ms", stopwatch.getElapsedTime(TimeUnit.MILLISECONDS));
+        } catch (Exception ex) {
+            LOGGER.error("Error adding fields for document '{}': ", content, ex);
         }
 
         doc.addField("rec.bibliographicRecordId", recordId.getBibliographicRecordId());
