@@ -33,6 +33,7 @@ pipeline {
         MARATHON_TOKEN = credentials("METASCRUM_MARATHON_TOKEN")
         DOCKER_IMAGE_VERSION = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
         DOCKER_IMAGE_DIT_VERSION = "DIT-${env.BUILD_NUMBER}"
+        GITLAB_PRIVATE_TOKEN = credentials("metascrum-gitlab-api-token")
     }
 
     stages {
@@ -102,6 +103,11 @@ pipeline {
                             docker tag docker-io.dbc.dk/rawrepo-solr-server:${DOCKER_IMAGE_VERSION} docker-io.dbc.dk/rawrepo-solr-server:${DOCKER_IMAGE_DIT_VERSION}
                             docker push docker-io.dbc.dk/rawrepo-solr-server:${DOCKER_IMAGE_DIT_VERSION}
                         """
+
+                        sh """
+							set-new-version rawrepo-solr.yml ${env.GITLAB_PRIVATE_TOKEN} metascrum/dit-gitops-secrets ${DOCKER_IMAGE_DIT_VERSION} -b master
+                            set-new-version rawrepo-solr-indexer-service.yml ${env.GITLAB_PRIVATE_TOKEN} metascrum/dit-gitops-secrets ${DOCKER_IMAGE_DIT_VERSION} -b master
+						"""
                     }
                 }
             }
