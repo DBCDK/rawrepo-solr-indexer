@@ -125,8 +125,8 @@ pipeline {
                 script {
                     dir("deploy") {
                         sh """
-                            set-new-version rawrepo-solr.yml ${env.GITLAB_PRIVATE_TOKEN} metascrum/dit-gitops-secrets ${DOCKER_IMAGE_DIT_VERSION} -b master
-                            set-new-version rawrepo-solr-indexer-service.yml ${env.GITLAB_PRIVATE_TOKEN} metascrum/dit-gitops-secrets ${DOCKER_IMAGE_DIT_VERSION} -b master
+                            set-new-version services/rawrepo-solr.yml ${env.GITLAB_PRIVATE_TOKEN} metascrum/dit-gitops-secrets ${DOCKER_IMAGE_DIT_VERSION} -b master
+                            set-new-version services/rawrepo-solr-indexer-service.yml ${env.GITLAB_PRIVATE_TOKEN} metascrum/dit-gitops-secrets ${DOCKER_IMAGE_DIT_VERSION} -b master
 						"""
                     }
                 }
