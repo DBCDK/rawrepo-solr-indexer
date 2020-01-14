@@ -108,7 +108,7 @@ pipeline {
             }
         }
 
-        stage("Deploy k8s") {
+        stage("Update DIT") {
             agent {
                 docker {
                     label workerNode
