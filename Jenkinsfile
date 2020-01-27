@@ -32,7 +32,6 @@ pipeline {
     environment {
         MARATHON_TOKEN = credentials("METASCRUM_MARATHON_TOKEN")
         DOCKER_IMAGE_VERSION = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
-        DOCKER_IMAGE_DIT_VERSION = "DIT-${env.BUILD_NUMBER}"
         GITLAB_PRIVATE_TOKEN = credentials("metascrum-gitlab-api-token")
     }
 
@@ -82,28 +81,6 @@ pipeline {
                                                 " --label user=isworker" +
                                                 " .")
                     image.push()
-
-                    // Build and push solr server
-                	sh "rm -rf solr/docker/rawrepo-solr-indexer-solr-config-zip"
-	                sh "unzip target/rawrepo-solr-indexer-2.0-SNAPSHOT-solr-config.zip -d solr/docker/rawrepo-solr-indexer-solr-config-zip"
-
-                    def solr = docker.build("docker-io.dbc.dk/rawrepo-solr-server:${DOCKER_IMAGE_VERSION}",
-                                                " --label jobname=${env.JOB_NAME}" +
-                                                " --label gitcommit=${env.GIT_COMMIT}" +
-                                                " --label buildnumber=${env.BUILD_NUMBER}" +
-                                                " --label user=isworker" +
-                                                " solr/docker")
-                    solr.push()
-
-                    if (env.BRANCH_NAME == 'master') {
-                        sh """
-                            docker tag docker-io.dbc.dk/rawrepo-solr-indexer:${DOCKER_IMAGE_VERSION} docker-io.dbc.dk/rawrepo-solr-indexer:${DOCKER_IMAGE_DIT_VERSION}
-                            docker push docker-io.dbc.dk/rawrepo-solr-indexer:${DOCKER_IMAGE_DIT_VERSION}
-
-                            docker tag docker-io.dbc.dk/rawrepo-solr-server:${DOCKER_IMAGE_VERSION} docker-io.dbc.dk/rawrepo-solr-server:${DOCKER_IMAGE_DIT_VERSION}
-                            docker push docker-io.dbc.dk/rawrepo-solr-server:${DOCKER_IMAGE_DIT_VERSION}
-                        """
-                    }
                 }
             }
         }
@@ -125,7 +102,7 @@ pipeline {
                 script {
                     dir("deploy") {
                         sh """
-                            set-new-version services/rawrepo-solr ${env.GITLAB_PRIVATE_TOKEN} metascrum/dit-gitops-secrets ${DOCKER_IMAGE_DIT_VERSION} -b master
+                            set-new-version services/rawrepo-solr/rawrepo-solr-indexer-service.yml ${env.GITLAB_PRIVATE_TOKEN} metascrum/dit-gitops-secrets ${DOCKER_IMAGE_VERSION} -b master
 						"""
                     }
                 }
