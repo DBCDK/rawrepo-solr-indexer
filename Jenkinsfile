@@ -102,7 +102,7 @@ pipeline {
                 script {
                     dir("deploy") {
                         sh """
-                            set-new-version services/rawrepo-solr ${env.GITLAB_PRIVATE_TOKEN} metascrum/dit-gitops-secrets ${DOCKER_IMAGE_VERSION} -b master
+                            set-new-version services/rawrepo-solr/rawrepo-solr-indexer-service.yml ${env.GITLAB_PRIVATE_TOKEN} metascrum/dit-gitops-secrets ${DOCKER_IMAGE_VERSION} -b master
 						"""
                     }
                 }
