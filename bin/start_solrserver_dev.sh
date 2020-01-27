@@ -7,20 +7,17 @@ USER=${USER:-WHAT}    # silencing annoying intellij syntax quibble
 
 package=solr
 cid_file=solr.cid
-docker_image="solrserver-updateservice"
-version=${USER}
+docker_image="docker-io.dbc.dk/rawrepo-solr-fbs-server"
+docker_version="master-$(curl https://is.dbc.dk/job/rawrepo/job/solr-config-fbs/job/master/lastSuccessfulBuild/buildNumber)"
 port=`id -u ${USER}`5
 detached="-d"
-while getopts "p:v:u" opt; do
+while getopts "p:u" opt; do
     case "$opt" in
     "u" )
             detached=""
             ;;
     "p" )
             port=$OPTARG
-            ;;
-    "v" )
-            version=$OPTARG
             ;;
     esac
 done
@@ -30,26 +27,9 @@ then
     mkdir ${HOME}/.ocb-tools
 fi
 
-if [ "$version" = "${USER}" ]
-then
-	# It's a bit dirty, but schema.xml is the only thing that are expected to change
-	# so if solr-indexer/target and/or solr/target exist, they will not be rebuild (takes a small war)
-	if [ ! -d target ]
-	then
-		mvn clean verify > /tmp/mvn.out.${USER}.solr-indexer
-	fi
-	echo ${pwd}
-	rm -rf solr/docker/rawrepo-solr-indexer-solr-config-zip
-	unzip target/rawrepo-solr-indexer-2.0-SNAPSHOT-solr-config.zip -d solr/docker/rawrepo-solr-indexer-solr-config-zip
-    cd solr/docker
-    docker build -t ${docker_image}:${version} .
-    cc=$?
-    if [ ${cc} -ne 0 ]
-    then
-        echo "Couldn't build image"
-        exit 1
-    fi
-fi
+echo "Using docker image ${docker_image}:${docker_version}"
+
+docker pull ${docker_image}:${docker_version}
 
 if [ -f ${HOME}/.ocb-tools/${cid_file} ]
 then
@@ -67,7 +47,7 @@ fi
 echo "Starting container"
 container_id=`docker run -it ${detached} -p ${port}:8983 \
 		-e SOLR_AUTOSOFTCOMMIT_MAXTIME=100 \
-		${docker_image}:${version}`
+		${docker_image}:${docker_version}`
 cc=$?
 if [ ${cc} -ne 0 ]
 then
