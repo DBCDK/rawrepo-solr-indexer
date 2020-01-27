@@ -59,12 +59,6 @@ pipeline {
             }
         }
 
-        stage("Archive artifacts") {
-            steps {
-                archiveArtifacts(artifacts: "target/rawrepo-solr-indexer-2.0-SNAPSHOT-solr-config.zip")
-            }
-        }
-
         stage("Docker build") {
             when {
                 expression {
