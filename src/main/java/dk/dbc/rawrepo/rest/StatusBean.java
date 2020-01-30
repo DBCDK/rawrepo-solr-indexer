@@ -5,17 +5,26 @@
 
 package dk.dbc.rawrepo.rest;
 
+import dk.dbc.rawrepo.exception.SolrIndexerSolrException;
 import dk.dbc.serviceutils.ServiceStatus;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.ejb.Stateless;
+import javax.inject.Inject;
 import javax.sql.DataSource;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
+import org.apache.solr.client.solrj.SolrServer;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.HttpSolrServer;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.ext.XLogger;
 import org.slf4j.ext.XLoggerFactory;
 
@@ -27,6 +36,22 @@ public class StatusBean implements ServiceStatus {
 
     @Resource(lookup = "jdbc/rawrepo")
     public DataSource rawrepoDataSource;
+
+    @Inject
+    @ConfigProperty(name = "SOLR_URL", defaultValue = "SOLR_URL not set")
+    protected String SOLR_URL;
+
+    public SolrServer solrServer;
+
+    @PostConstruct
+    public void create() {
+        solrServer = new HttpSolrServer(SOLR_URL);
+    }
+
+    @PreDestroy
+    public void destroy() {
+        solrServer.shutdown();
+    }
 
     public boolean isDbAlive() {
         LOGGER.entry();
@@ -46,8 +71,22 @@ public class StatusBean implements ServiceStatus {
         return alive;
     }
 
+    public boolean isSolrAlive() {
+        LOGGER.entry();
+        boolean alive = true;
+
+        // Test connection and return proper error if there is a problem
+        try {
+            solrServer.ping();
+        } catch (SolrServerException | IOException | HttpSolrServer.RemoteSolrException ex) {
+            alive = false;
+            LOGGER.error("Status check solr alive failed..", ex);
+        }
+        return alive;
+    }
+
     @Override
     public Response getStatus() {
-        return isDbAlive()?Response.ok().build():Response.serverError().build();
+        return (isDbAlive() && isSolrAlive())?Response.ok().build():Response.serverError().build();
     }
 }
