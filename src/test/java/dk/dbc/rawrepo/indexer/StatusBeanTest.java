@@ -19,8 +19,8 @@ public class StatusBeanTest {
 
     @Test
     public void testStatusDBFail() throws SQLException {
-        Response.Status status = Response.Status.OK;
-        StatusBean statusBean = new StatusBean();
+        final Response.Status status = Response.Status.OK;
+        final StatusBean statusBean = new StatusBean();
         statusBean.rawrepoDataSource = mock(DataSource.class);
         when(statusBean.rawrepoDataSource.getConnection()).thenThrow(new SQLDataException());
         assertThat(statusBean.isDbAlive(), is(false));
@@ -28,8 +28,8 @@ public class StatusBeanTest {
 
     @Test
     public void testStatusSOLRFail() throws IOException, SolrServerException {
-        Response.Status status = Response.Status.OK;
-        StatusBean statusBean = new StatusBean();
+        final Response.Status status = Response.Status.OK;
+        final StatusBean statusBean = new StatusBean();
         statusBean.solrServer = mock(SolrServer.class);
         when(statusBean.solrServer.ping()).thenThrow(new SolrServerException("Solr Exception"));
         assertThat(statusBean.isSolrAlive(), is(false));
@@ -37,8 +37,8 @@ public class StatusBeanTest {
 
     @Test
     public void testStatusSOLROk() throws IOException, SolrServerException {
-        Response.Status status = Response.Status.OK;
-        StatusBean statusBean = new StatusBean();
+        final Response.Status status = Response.Status.OK;
+        final StatusBean statusBean = new StatusBean();
         statusBean.solrServer = mock(SolrServer.class);
         when(statusBean.solrServer.ping()).thenReturn(new SolrPingResponse());
         assertThat(statusBean.isSolrAlive(), is(true));
