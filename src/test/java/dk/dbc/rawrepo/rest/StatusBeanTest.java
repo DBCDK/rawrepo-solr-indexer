@@ -1,4 +1,4 @@
-package dk.dbc.rawrepo.indexer;
+package dk.dbc.rawrepo.rest;
 
 import dk.dbc.rawrepo.rest.StatusBean;
 import java.io.IOException;
