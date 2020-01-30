@@ -5,9 +5,7 @@
 
 package dk.dbc.rawrepo.rest;
 
-import dk.dbc.rawrepo.exception.SolrIndexerSolrException;
 import dk.dbc.serviceutils.ServiceStatus;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -53,7 +51,7 @@ public class StatusBean implements ServiceStatus {
         solrServer.shutdown();
     }
 
-    public boolean isDbAlive() {
+    boolean isDbAlive() {
         LOGGER.entry();
         String res = "";
         boolean alive = true;
@@ -71,7 +69,7 @@ public class StatusBean implements ServiceStatus {
         return alive;
     }
 
-    public boolean isSolrAlive() {
+    boolean isSolrAlive() {
         LOGGER.entry();
         boolean alive = true;
 
@@ -87,6 +85,11 @@ public class StatusBean implements ServiceStatus {
 
     @Override
     public Response getStatus() {
-        return (isDbAlive() && isSolrAlive())?Response.ok().build():Response.serverError().build();
+        if (isDbAlive() && isSolrAlive()) {
+            return Response.ok().entity(OK_ENTITY).build();
+        }
+        else {
+            return Response.serverError().build();
+        }
     }
 }
