@@ -16,6 +16,8 @@ import dk.dbc.rawrepo.queue.RawRepoQueueDAO;
 
 import dk.dbc.util.Stopwatch;
 import dk.dbc.util.Timed;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
@@ -92,6 +94,7 @@ public class Indexer {
         solrServer.shutdown();
     }
 
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public void performWork() throws SolrIndexerRawRepoException, SolrIndexerSolrException, RecordServiceConnectorException {
         boolean moreWork = true;
         int processedJobs = 0;

@@ -29,7 +29,6 @@ public class Scheduler {
         } catch (Exception e) {
             LOGGER.error("An unhandled exception has made its way to the scheduler which means something unrecoverable has happened, so aborting now");
             LOGGER.catching(e);
-            System.exit(1);
         }
     }
 }
