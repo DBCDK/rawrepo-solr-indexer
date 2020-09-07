@@ -69,7 +69,7 @@ pipeline {
                     script {
                         sh """
                             bash -c '
-                                source bin/activate
+                                source bin/activate ../
                                 run --junit -s VERIFIED
                             '
                            """
