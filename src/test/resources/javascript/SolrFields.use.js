@@ -11,19 +11,25 @@
 EXPORTED_SYMBOLS = [ 'SolrFields', 'solrField' ];
 
 var SolrFields = function() {
-    var that = {};
-    that.indexObject = {};
+    var indexObject = {};
 
-    that.addField = function(key, value) {
-        var valueList = this.indexObject[key]
+    function addField(key, value) {
+        var valueList = indexObject[key]
         if (valueList === undefined) {
-           this.indexObject[key] = []
+           indexObject[key] = []
         }
-        this.indexObject[key].push(value);
-    };
+        indexObject[key].push(value);
+    }
 
-    return that;
-}( );
+    function getIndexObject() {
+        return indexObject;
+    }
+
+    return {
+        addField: addField,
+        getIndexObject: getIndexObject
+    }
+}();
 
 var solrField = function (key, value) {
     SolrFields.addField(key, value)
