@@ -1,0 +1,7 @@
+Egenskab: __KORT_BESKRIVELSE__
+
+__DETALJERET_BESKRIVELSE__
+
+    Scenarie: __SCENARIE_BESKRIVELSE__
+        Når JavaScript funktionen __JS_FUNKTION__ fra script __JS_SCRIPT_FIL__ kaldes med post fra fil __INPUT_FIL__ med argumenterne __ARGS_AS_JSON__
+        Så bliver resultatet json som i fil __JSON_RESULTAT_FIL__
