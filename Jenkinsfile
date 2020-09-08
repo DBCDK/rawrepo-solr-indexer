@@ -1,6 +1,6 @@
 #!groovy
 
-def workerNode = "devel8"
+def workerNode = "devel10"
 
 void notifyOfBuildStatus(final String buildStatus) {
     final String subject = "${buildStatus}: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
@@ -56,6 +56,26 @@ pipeline {
                       pattern         : '**/target/pmd.xml',
                       unstableTotalAll: "0",
                       failedTotalAll  : "0"])
+            }
+        }
+
+        stage("DIT test") {
+            steps {
+                script {
+                    sh "rm -rf core"
+                }
+                dir("core") {
+                    git(credentialsId: 'gitlab-meta', url: "gitlab@gitlab.dbc.dk:pu/dit-core.git")
+                    script {
+                        sh """
+                            bash -c '
+                                source bin/activate ../
+                                run --junit -s VERIFIED
+                            '
+                           """
+                        junit "reports/*.xml"
+                    }
+                }
             }
         }
 

@@ -200,3 +200,8 @@ var index = function (content, mimetype) {
         }
     }
 };
+
+var index_dit_wrapper = function (content) {
+    index(content)
+    return JSON.stringify(SolrFields.getIndexObject());
+}
