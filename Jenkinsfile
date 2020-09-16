@@ -99,7 +99,7 @@ pipeline {
             }
         }
 
-        stage("Update DIT") {
+        stage("Update deployments") {
             agent {
                 docker {
                     label workerNode
@@ -116,6 +116,10 @@ pipeline {
                 script {
                     dir("deploy") {
                         sh """
+                            set-new-version rawrepo-solr-indexer.yml ${env.GITLAB_PRIVATE_TOKEN} metascrum/rawrepo-solr-indexer-deployer ${DOCKER_IMAGE_VERSION} -b metascrum-staging
+                            set-new-version rawrepo-solr-indexer.yml ${env.GITLAB_PRIVATE_TOKEN} metascrum/rawrepo-solr-indexer-deployer ${DOCKER_IMAGE_VERSION} -b basismig
+                            set-new-version rawrepo-solr-indexer.yml ${env.GITLAB_PRIVATE_TOKEN} metascrum/rawrepo-solr-indexer-deployer ${DOCKER_IMAGE_VERSION} -b fbstest
+
                             set-new-version services/rawrepo-solr/rawrepo-solr-indexer-service.yml ${env.GITLAB_PRIVATE_TOKEN} metascrum/dit-gitops-secrets ${DOCKER_IMAGE_VERSION} -b master
 						"""
                     }
