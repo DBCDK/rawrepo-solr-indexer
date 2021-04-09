@@ -1,1 +1,1 @@
-../../../main/resources/indexer.js
+../../main/resources/indexer.js
