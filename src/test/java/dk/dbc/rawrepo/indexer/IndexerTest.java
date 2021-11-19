@@ -32,7 +32,7 @@ public class IndexerTest {
         private String modifiedTest;
         private String createdTest;
         private String mimetypeTest;
-        private RecordData.RecordId recordIdTest;
+        private RecordId recordIdTest;
 
         public RecordDataTest() {
             super();
@@ -65,12 +65,12 @@ public class IndexerTest {
             return this.mimetypeTest;
         }
 
-        public void setRecordId( RecordData.RecordId recordId ) {
+        public void setRecordId( RecordId recordId ) {
             this.recordIdTest = recordId;
         }
 
         @Override
-        public RecordData.RecordId getRecordId() {
+        public RecordId getRecordId() {
             return this.recordIdTest;
         }
 
@@ -235,7 +235,8 @@ public class IndexerTest {
         RecordData record = createRecordData("id", 123456, content.getBytes(), created, modified, true, Indexer.MIMETYPE_MARCXCHANGE);
 
         Indexer indexer = createInstance();
-        indexer.worker = new JavaScriptWorker();
+        indexer.jsEnvironment = new JSEnvironment();
+        indexer.jsEnvironment.init();
 
         SolrInputDocument doc = indexer.createIndexDocument(record);
 
@@ -266,7 +267,8 @@ public class IndexerTest {
         RecordData record = createRecordData("id", 123456, content.getBytes(), created, modified, true, Indexer.MIMETYPE_MARCXCHANGE);
 
         Indexer indexer = createInstance();
-        indexer.worker = new JavaScriptWorker();
+        indexer.jsEnvironment = new JSEnvironment();
+        indexer.jsEnvironment.init();
 
         SolrInputDocument doc = indexer.createIndexDocument(record);
 
@@ -292,7 +294,8 @@ public class IndexerTest {
         RecordData record = createRecordData("id", 123456, content.getBytes(), created, modified, true, "DUMMY");
 
         Indexer indexer = createInstance();
-        indexer.worker = new JavaScriptWorker();
+        indexer.jsEnvironment = new JSEnvironment();
+        indexer.jsEnvironment.init();
 
         SolrInputDocument doc = indexer.createIndexDocument(record);
 

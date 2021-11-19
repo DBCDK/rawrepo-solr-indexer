@@ -1,10 +1,7 @@
-/*
- * Copyright Dansk Bibliotekscenter a/s. Licensed under GNU GPL v3
- *  See license text at https://opensource.dbc.dk/licenses/gpl-3.0
- */
-
 package dk.dbc.rawrepo.indexer;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dk.dbc.rawrepo.RecordData;
 import dk.dbc.rawrepo.RecordServiceConnector;
 import dk.dbc.rawrepo.RecordServiceConnectorException;
@@ -13,11 +10,8 @@ import dk.dbc.rawrepo.exception.SolrIndexerSolrException;
 import dk.dbc.rawrepo.queue.QueueException;
 import dk.dbc.rawrepo.queue.QueueItem;
 import dk.dbc.rawrepo.queue.RawRepoQueueDAO;
-
 import dk.dbc.util.Stopwatch;
 import dk.dbc.util.Timed;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
@@ -33,12 +27,17 @@ import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -70,23 +69,35 @@ public class Indexer {
     private RawRepoQueueBean queueBean;
 
     static final String MIMETYPE_MARCXCHANGE = "text/marcxchange";
-    static final String MIMETYPE_ENRICHMENT = "text/enrichment+marcxchange";
-    static final String MIMETYPE_ARTICLE = "text/article+marcxchange";
-    static final String MIMETYPE_AUTHORITY = "text/authority+marcxchange";
 
-    JavaScriptWorker worker;
+    protected JSEnvironment jsEnvironment;
 
     private SolrServer solrServer;
+    private final ObjectMapper mapper = new ObjectMapper();
+    // Object used to map JavaScript object back to Java object
+    private final TypeReference<Map<String, List<String>>> typeRef = new TypeReference<Map<String, List<String>>>() {
+    };
 
     public Indexer() {
         this.solrServer = null;
     }
 
+
     @PostConstruct
     public void create() {
-        LOGGER.info("Initializing with url {}", SOLR_URL);
-        solrServer = new HttpSolrServer(SOLR_URL);
-        worker = new JavaScriptWorker();
+        try {
+            solrServer = new HttpSolrServer(SOLR_URL);
+            solrServer.ping();
+        } catch (SolrServerException | IOException ex) {
+            throw new IndexerRuntimeException("Exception during instantiation of Solr server connection", ex);
+        }
+
+        try {
+            jsEnvironment = new JSEnvironment();
+            jsEnvironment.init();
+        } catch (Exception ex) {
+            throw new IndexerRuntimeException("Exception during instantiation of JavaScript environment", ex);
+        }
     }
 
     @PreDestroy
@@ -154,23 +165,23 @@ public class Indexer {
     }
 
     @Timed
-    public void processJob(QueueItem job, RawRepoQueueDAO dao) throws QueueException, SolrIndexerSolrException,RecordServiceConnectorException {
+    public void processJob(QueueItem job, RawRepoQueueDAO dao) throws QueueException, SolrIndexerSolrException, RecordServiceConnectorException {
         LOGGER.info("Indexing {}", job);
         final Stopwatch stopwatch = new Stopwatch();
 
-        final RecordData.RecordId jobId = new RecordData.RecordId( job.getBibliographicRecordId(), job.getAgencyId() );
+        final RecordData.RecordId jobId = new RecordData.RecordId(job.getBibliographicRecordId(), job.getAgencyId());
         LOGGER.info("---------------------------------------------------------------");
         try {
-            final RecordData record = fetchRecord(jobId);
-            if (record == null) {
+            final RecordData recordData = fetchRecord(jobId);
+            if (recordData == null) {
                 LOGGER.info("record from {} does not exist, most likely queued by dependency", job);
                 return;
             }
-            MDC.put(TRACKING_ID, createTrackingId(record));
-            if (record.isDeleted()) {
+            MDC.put(TRACKING_ID, createTrackingId(recordData));
+            if (recordData.isDeleted()) {
                 deleteSolrDocument(jobId);
             } else {
-                SolrInputDocument doc = createIndexDocument(record);
+                SolrInputDocument doc = createIndexDocument(recordData);
                 updateSolr(jobId, doc);
             }
             LOGGER.info("Indexed {}", job);
@@ -213,27 +224,46 @@ public class Indexer {
         }
     }
 
-    SolrInputDocument createIndexDocument(RecordData record) {
+    SolrInputDocument createIndexDocument(RecordData recordData) {
         final SolrInputDocument doc = new SolrInputDocument();
-        RecordData.RecordId recordId = record.getRecordId();
+        RecordData.RecordId recordId = recordData.getRecordId();
         doc.addField("id", createSolrDocumentId(recordId));
 
-        String mimeType = record.getMimetype();
+        String mimeType = recordData.getMimetype();
         LOGGER.debug("Indexing content of {} with mimetype {}", recordId, mimeType);
-        String content = new String(record.getContent(), StandardCharsets.UTF_8);
+        String content = new String(recordData.getContent(), StandardCharsets.UTF_8);
+        final SupplementaryData supplementaryData = new SupplementaryData();
+        supplementaryData.setMimetype(recordData.getMimetype());
+        supplementaryData.setCorrectedAgencyId(recordData.getRecordId().getAgencyId());
+
         try {
             Stopwatch stopwatch = new Stopwatch();
-            worker.addFields(doc, content, mimeType);
+
+            final Object jsResult = jsEnvironment.getIndexes(content, supplementaryData);
+
             LOGGER_STOPWATCH.info("Javascript took {} ms", stopwatch.getElapsedTime(TimeUnit.MILLISECONDS));
+
+            if (jsResult != null) {
+                final Map<String, List<String>> fields = mapper.readValue(jsResult.toString(), typeRef);
+
+                final Iterator<Map.Entry<String, List<String>>> it = fields.entrySet().iterator();
+                while (it.hasNext()) {
+                    final Map.Entry<String, List<String>> pair = it.next();
+                    doc.addField(pair.getKey(), pair.getValue());
+                    it.remove(); // avoids a ConcurrentModificationException
+                }
+            } else {
+                LOGGER.info("Got no useable result from js");
+            }
         } catch (Exception ex) {
             LOGGER.error("Error adding fields for document '{}': ", content, ex);
         }
 
         doc.addField("rec.bibliographicRecordId", recordId.getBibliographicRecordId());
         doc.addField("rec.agencyId", recordId.getAgencyId());
-        doc.addField("rec.created", record.getCreated());
-        doc.addField("rec.modified", record.getModified());
-        doc.addField("rec.trackingId", record.getTrackingId());
+        doc.addField("rec.created", recordData.getCreated());
+        doc.addField("rec.modified", recordData.getModified());
+        doc.addField("rec.trackingId", recordData.getTrackingId());
         LOGGER.trace("Created solr document {}", doc);
         return doc;
     }
