@@ -7,7 +7,7 @@ USER=${USER:-WHAT}    # silencing annoying intellij syntax quibble
 
 package=solr
 cid_file=solr.cid
-docker_image="docker-io.dbc.dk/rawrepo-solr-fbs-server"
+docker_image="docker-metascrum.artifacts.dbccloud.dk/rawrepo-solr-fbs-server"
 docker_version="master-$(curl https://is.dbc.dk/job/rawrepo/job/solr-config-fbs/job/master/lastSuccessfulBuild/buildNumber)"
 port=`id -u ${USER}`5
 detached="-d"

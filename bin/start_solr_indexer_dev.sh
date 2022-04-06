@@ -9,7 +9,7 @@ SOLR_PORT_UPDATE=${SOLR_PORT_UPDATE:-WHAT}
 
 package=solr-indexer
 cid_file=solr-indexer.cid
-docker_image=docker-io.dbc.dk/rawrepo-solr-indexer-updateservice
+docker_image=docker-metascrum.artifacts.dbccloud.dk/rawrepo-solr-indexer
 version=${USER}
 port=`id -u ${USER}`3
 detached="-d"

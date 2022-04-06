@@ -88,7 +88,7 @@ pipeline {
             steps {
                 script {
                     // Build and push indexer
-                    def image = docker.build("docker-io.dbc.dk/rawrepo-solr-indexer:${DOCKER_IMAGE_VERSION}",
+                    def image = docker.build("docker-metascrum.artifacts.dbccloud.dk/rawrepo-solr-indexer:${DOCKER_IMAGE_VERSION}",
                                                 " --label jobname=${env.JOB_NAME}" +
                                                 " --label gitcommit=${env.GIT_COMMIT}" +
                                                 " --label buildnumber=${env.BUILD_NUMBER}" +
