@@ -6,11 +6,6 @@
 package dk.dbc.rawrepo.rest;
 
 import dk.dbc.serviceutils.ServiceStatus;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Resource;
@@ -18,13 +13,18 @@ import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
-import javax.sql.DataSource;
-import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.HttpSolrServer;
+import org.apache.solr.client.solrj.impl.Http2SolrClient;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.ext.XLogger;
 import org.slf4j.ext.XLoggerFactory;
+
+import javax.sql.DataSource;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 @Stateless
 @Path("/api")
@@ -39,16 +39,16 @@ public class StatusBean implements ServiceStatus {
     @ConfigProperty(name = "SOLR_URL", defaultValue = "SOLR_URL not set")
     protected String SOLR_URL;
 
-    public SolrServer solrServer;
+    public Http2SolrClient solrClient;
 
     @PostConstruct
     public void create() {
-        solrServer = new HttpSolrServer(SOLR_URL);
+        solrClient = new Http2SolrClient.Builder(SOLR_URL).build();
     }
 
     @PreDestroy
     public void destroy() {
-        solrServer.shutdown();
+        solrClient.close();
     }
 
     boolean isDbAlive() {
@@ -75,8 +75,8 @@ public class StatusBean implements ServiceStatus {
 
         // Test connection and return proper error if there is a problem
         try {
-            solrServer.ping();
-        } catch (SolrServerException | IOException | HttpSolrServer.RemoteSolrException ex) {
+            solrClient.ping();
+        } catch (SolrServerException | IOException ex) {
             alive = false;
             LOGGER.error("Status check solr alive failed..", ex);
         }

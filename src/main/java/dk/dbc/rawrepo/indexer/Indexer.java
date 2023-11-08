@@ -7,16 +7,20 @@ import dk.dbc.rawrepo.exception.SolrIndexerSolrException;
 import dk.dbc.rawrepo.queue.QueueException;
 import dk.dbc.rawrepo.queue.QueueItem;
 import dk.dbc.rawrepo.queue.RawRepoQueueDAO;
-
 import dk.dbc.rawrepo.record.RecordServiceConnector;
 import dk.dbc.rawrepo.record.RecordServiceConnectorException;
 import dk.dbc.util.Stopwatch;
 import dk.dbc.util.Timed;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.annotation.Resource;
+import jakarta.ejb.EJB;
+import jakarta.ejb.Stateless;
 import jakarta.ejb.TransactionAttribute;
 import jakarta.ejb.TransactionAttributeType;
-import org.apache.solr.client.solrj.SolrServer;
+import jakarta.inject.Inject;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.HttpSolrServer;
+import org.apache.solr.client.solrj.impl.Http2SolrClient;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrInputDocument;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -24,12 +28,6 @@ import org.slf4j.MDC;
 import org.slf4j.ext.XLogger;
 import org.slf4j.ext.XLoggerFactory;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.annotation.Resource;
-import jakarta.ejb.EJB;
-import jakarta.ejb.Stateless;
-import jakarta.inject.Inject;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -69,22 +67,18 @@ public class Indexer {
 
     JavaScriptWorker worker;
 
-    private SolrServer solrServer;
-
-    public Indexer() {
-        this.solrServer = null;
-    }
+    private Http2SolrClient solrClient;
 
     @PostConstruct
     public void create() {
         LOGGER.info("Initializing with url {}", SOLR_URL);
-        solrServer = new HttpSolrServer(SOLR_URL);
+        solrClient = new Http2SolrClient.Builder(SOLR_URL).build();
         worker = new JavaScriptWorker();
     }
 
     @PreDestroy
     public void destroy() {
-        solrServer.shutdown();
+        solrClient.close();
     }
 
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
@@ -94,8 +88,8 @@ public class Indexer {
 
         // Test connection and return proper error if there is a problem
         try {
-            solrServer.ping();
-        } catch (SolrServerException | IOException | HttpSolrServer.RemoteSolrException ex) {
+            solrClient.ping();
+        } catch (SolrServerException | IOException ex) {
             throw new SolrIndexerSolrException("Could not connect to the solr server. " + ex.getMessage(), ex);
         }
 
@@ -123,7 +117,7 @@ public class Indexer {
             } catch (SQLException ex) {
                 // If we get a SQLException there is something wrong which we can't do anything about.
                 LOGGER.error("SQLException: ", ex);
-                throw new SolrIndexerRawRepoException("SQL exception from rawrepo:" + ex.toString(), ex);
+                throw new SolrIndexerRawRepoException("SQL exception from rawrepo:" + ex, ex);
             } catch (QueueException | RuntimeException ex) {
                 LOGGER.error("Error getting job from database", ex);
                 moreWork = false;
@@ -147,7 +141,7 @@ public class Indexer {
     }
 
     @Timed
-    public void processJob(QueueItem job, RawRepoQueueDAO dao) throws QueueException, SolrIndexerSolrException,RecordServiceConnectorException {
+    public void processJob(QueueItem job, RawRepoQueueDAO dao) throws QueueException, RecordServiceConnectorException {
         LOGGER.info("Indexing {}", job);
         final Stopwatch stopwatch = new Stopwatch();
 
@@ -167,13 +161,13 @@ public class Indexer {
                 updateSolr(record, doc);
             }
             LOGGER.info("Indexed {}", job);
-        } catch (HttpSolrServer.RemoteSolrException ex) {
-            // Index is missing on the solr server so we need to stop now
-            if (ex.getMessage().contains("unknown field")) {
-                throw new SolrIndexerSolrException("Missing index: " + ex.getMessage(), ex);
-            }
-            LOGGER.error("Error processing {}", job, ex);
-            queueBean.queueFail(dao, job, ex.getMessage());
+//        } catch ( ex) {
+//            // Index is missing on the solr server so we need to stop now
+//            if (ex.getMessage().contains("unknown field")) {
+//                throw new SolrIndexerSolrException("Missing index: " + ex.getMessage(), ex);
+//            }
+//            LOGGER.error("Error processing {}", job, ex);
+//            queueBean.queueFail(dao, job, ex.getMessage());
         } catch (SolrException | SolrServerException | IOException ex) {
             LOGGER.error("Error processing {}", job, ex);
             queueBean.queueFail(dao, job, ex.getMessage());
@@ -224,15 +218,14 @@ public class Indexer {
 
     private void deleteSolrDocument(RecordIdDTO jobId) throws IOException, SolrServerException {
         LOGGER.debug("Deleting document for {} to solr", jobId);
-        solrServer.deleteById(createSolrDocumentId(jobId));
+        solrClient.deleteById(createSolrDocumentId(jobId));
     }
 
     private void updateSolr(RecordDTO jobId, SolrInputDocument doc) throws IOException, SolrServerException {
         LOGGER.debug("Adding document for {} to solr", jobId);
         Stopwatch stopwatch = new Stopwatch();
-        solrServer.add(doc);
+        solrClient.add(doc);
         LOGGER_STOPWATCH.info("updateSolr took {} ms", stopwatch.getElapsedTime(TimeUnit.MILLISECONDS));
-
     }
 
     private void commit(final Connection connection) throws SQLException {
