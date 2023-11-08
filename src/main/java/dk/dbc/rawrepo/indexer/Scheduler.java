@@ -1,20 +1,12 @@
-/*
- * Copyright Dansk Bibliotekscenter a/s. Licensed under GNU GPL v3
- *  See license text at https://opensource.dbc.dk/licenses/gpl-3.0
- */
-
 package dk.dbc.rawrepo.indexer;
 
 import org.slf4j.ext.XLogger;
 import org.slf4j.ext.XLoggerFactory;
 
-import javax.ejb.EJB;
-import javax.ejb.Schedule;
-import javax.ejb.Stateless;
+import jakarta.ejb.EJB;
+import jakarta.ejb.Schedule;
+import jakarta.ejb.Stateless;
 
-/**
- * @author DBC {@literal <dk.dbc.dk>}
- */
 @Stateless
 public class Scheduler {
     private static final XLogger LOGGER = XLoggerFactory.getXLogger(Scheduler.class);

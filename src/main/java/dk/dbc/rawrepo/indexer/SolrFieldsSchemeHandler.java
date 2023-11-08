@@ -1,8 +1,3 @@
-/*
- * Copyright Dansk Bibliotekscenter a/s. Licensed under GNU GPL v3
- *  See license text at https://opensource.dbc.dk/licenses/gpl-3.0
- */
-
 package dk.dbc.rawrepo.indexer;
 
 import dk.dbc.jslib.Environment;
@@ -17,9 +12,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * @author DBC {@literal <dk.dbc.dk>}
- */
 class SolrFieldsSchemeHandler implements ISchemeHandler {
 
     private static final Logger log = LoggerFactory.getLogger(SolrFieldsSchemeHandler.class);

@@ -1,17 +1,18 @@
 package dk.dbc.rawrepo.rest;
 
-import dk.dbc.rawrepo.rest.StatusBean;
-import java.io.IOException;
-import java.sql.SQLDataException;
-import java.sql.SQLException;
-import javax.sql.DataSource;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.SolrPingResponse;
 import org.junit.Test;
-import static org.junit.Assert.assertThat;
+
+import javax.sql.DataSource;
+import java.io.IOException;
+import java.sql.SQLDataException;
+import java.sql.SQLException;
+
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

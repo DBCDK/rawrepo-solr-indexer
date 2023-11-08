@@ -1,8 +1,3 @@
-/*
- * Copyright Dansk Bibliotekscenter a/s. Licensed under GNU GPL v3
- *  See license text at https://opensource.dbc.dk/licenses/gpl-3.0
- */
-
 package dk.dbc.rawrepo.indexer;
 
 import dk.dbc.jslib.ClasspathSchemeHandler;
@@ -17,9 +12,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
-/**
- * @author DBC {@literal <dk.dbc.dk>}
- */
 public class JavaScriptWorker {
 
     private static final Logger log = LoggerFactory.getLogger(JavaScriptWorker.class);

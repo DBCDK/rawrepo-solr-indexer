@@ -1,8 +1,3 @@
-/*
- * Copyright Dansk Bibliotekscenter a/s. Licensed under GNU GPL v3
- *  See license text at https://opensource.dbc.dk/licenses/gpl-3.0
- */
-
 package dk.dbc.rawrepo.indexer;
 
 import org.apache.solr.common.SolrInputDocument;
@@ -36,9 +31,6 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
-/**
- * @author DBC {@literal <dbc.dk>}
- */
 @RunWith(Parameterized.class)
 public class JavaScriptWorkerTest {
 
