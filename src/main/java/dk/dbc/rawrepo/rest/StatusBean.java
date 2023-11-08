@@ -43,7 +43,7 @@ public class StatusBean implements ServiceStatus {
 
     @PostConstruct
     public void create() {
-        solrClient = new Http2SolrClient.Builder(SOLR_URL).build();
+        solrClient = new Http2SolrClient.Builder(SOLR_URL).useHttp1_1(true).build();
     }
 
     @PreDestroy

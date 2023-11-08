@@ -20,6 +20,7 @@ import jakarta.ejb.TransactionAttribute;
 import jakarta.ejb.TransactionAttributeType;
 import jakarta.inject.Inject;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.BaseHttpSolrClient;
 import org.apache.solr.client.solrj.impl.Http2SolrClient;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrInputDocument;
@@ -72,7 +73,7 @@ public class Indexer {
     @PostConstruct
     public void create() {
         LOGGER.info("Initializing with url {}", SOLR_URL);
-        solrClient = new Http2SolrClient.Builder(SOLR_URL).build();
+        solrClient = new Http2SolrClient.Builder(SOLR_URL).useHttp1_1(true).build();
         worker = new JavaScriptWorker();
     }
 
@@ -141,7 +142,7 @@ public class Indexer {
     }
 
     @Timed
-    public void processJob(QueueItem job, RawRepoQueueDAO dao) throws QueueException, RecordServiceConnectorException {
+    public void processJob(QueueItem job, RawRepoQueueDAO dao) throws QueueException, RecordServiceConnectorException, SolrIndexerSolrException {
         LOGGER.info("Indexing {}", job);
         final Stopwatch stopwatch = new Stopwatch();
 
@@ -161,13 +162,13 @@ public class Indexer {
                 updateSolr(record, doc);
             }
             LOGGER.info("Indexed {}", job);
-//        } catch ( ex) {
-//            // Index is missing on the solr server so we need to stop now
-//            if (ex.getMessage().contains("unknown field")) {
-//                throw new SolrIndexerSolrException("Missing index: " + ex.getMessage(), ex);
-//            }
-//            LOGGER.error("Error processing {}", job, ex);
-//            queueBean.queueFail(dao, job, ex.getMessage());
+        } catch (BaseHttpSolrClient.RemoteSolrException ex) {
+            // Index is missing on the solr server, so we need to stop now
+            if (ex.getMessage().contains("unknown field")) {
+                throw new SolrIndexerSolrException("Missing index: " + ex.getMessage(), ex);
+            }
+            LOGGER.error("Error processing {}", job, ex);
+            queueBean.queueFail(dao, job, ex.getMessage());
         } catch (SolrException | SolrServerException | IOException ex) {
             LOGGER.error("Error processing {}", job, ex);
             queueBean.queueFail(dao, job, ex.getMessage());
