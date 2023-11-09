@@ -1,17 +1,18 @@
 package dk.dbc.rawrepo.rest;
 
-import dk.dbc.rawrepo.rest.StatusBean;
+import jakarta.ws.rs.core.Response;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.Http2SolrClient;
+import org.apache.solr.client.solrj.response.SolrPingResponse;
+import org.junit.Test;
+
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.SQLDataException;
 import java.sql.SQLException;
-import javax.sql.DataSource;
-import javax.ws.rs.core.Response;
-import org.apache.solr.client.solrj.SolrServer;
-import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.response.SolrPingResponse;
-import org.junit.Test;
-import static org.junit.Assert.assertThat;
+
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -30,8 +31,8 @@ public class StatusBeanTest {
     public void testStatusSOLRFail() throws IOException, SolrServerException {
         final Response.Status status = Response.Status.OK;
         final StatusBean statusBean = new StatusBean();
-        statusBean.solrServer = mock(SolrServer.class);
-        when(statusBean.solrServer.ping()).thenThrow(new SolrServerException("Solr Exception"));
+        statusBean.solrClient = mock(Http2SolrClient.class);
+        when(statusBean.solrClient.ping()).thenThrow(new SolrServerException("Solr Exception"));
         assertThat(statusBean.isSolrAlive(), is(false));
     }
 
@@ -39,8 +40,8 @@ public class StatusBeanTest {
     public void testStatusSOLROk() throws IOException, SolrServerException {
         final Response.Status status = Response.Status.OK;
         final StatusBean statusBean = new StatusBean();
-        statusBean.solrServer = mock(SolrServer.class);
-        when(statusBean.solrServer.ping()).thenReturn(new SolrPingResponse());
+        statusBean.solrClient = mock(Http2SolrClient.class);
+        when(statusBean.solrClient.ping()).thenReturn(new SolrPingResponse());
         assertThat(statusBean.isSolrAlive(), is(true));
     }
 }

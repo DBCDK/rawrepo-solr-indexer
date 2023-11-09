@@ -7,7 +7,7 @@ import dk.dbc.util.Stopwatch;
 import org.slf4j.ext.XLogger;
 import org.slf4j.ext.XLoggerFactory;
 
-import javax.ejb.Stateless;
+import jakarta.ejb.Stateless;
 import java.util.concurrent.TimeUnit;
 
 @Stateless

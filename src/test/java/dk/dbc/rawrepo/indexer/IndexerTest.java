@@ -1,11 +1,7 @@
-/*
- * Copyright Dansk Bibliotekscenter a/s. Licensed under GNU GPL v3
- *  See license text at https://opensource.dbc.dk/licenses/gpl-3.0
- */
-
 package dk.dbc.rawrepo.indexer;
 
-import dk.dbc.rawrepo.RecordData;
+import dk.dbc.rawrepo.dto.RecordDTO;
+import dk.dbc.rawrepo.dto.RecordIdDTO;
 import org.apache.solr.common.SolrInputDocument;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -22,17 +18,14 @@ import java.util.Date;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-/**
- * @author DBC {@literal <dbc.dk>}
- */
 public class IndexerTest {
 
 
-    private class RecordDataTest extends RecordData {
+    private class RecordDataTest extends RecordDTO {
         private String modifiedTest;
         private String createdTest;
         private String mimetypeTest;
-        private RecordData.RecordId recordIdTest;
+        private RecordIdDTO recordIdTest;
 
         public RecordDataTest() {
             super();
@@ -65,12 +58,12 @@ public class IndexerTest {
             return this.mimetypeTest;
         }
 
-        public void setRecordId( RecordData.RecordId recordId ) {
+        public void setRecordId( RecordIdDTO recordId ) {
             this.recordIdTest = recordId;
         }
 
         @Override
-        public RecordData.RecordId getRecordId() {
+        public RecordIdDTO getRecordId() {
             return this.recordIdTest;
         }
 
@@ -82,20 +75,20 @@ public class IndexerTest {
             .toFormatter()
             .withZone(ZoneId.of("Europe/Copenhagen"));
 
-    private RecordData createRecordData(String bibliographicRecordId,
+    private RecordDTO createRecordData(String bibliographicRecordId,
                                       int agencyId,
                                       byte[] content,
                                       Instant created,
                                       Instant modified,
                                       boolean deleted,
                                       String mimetype) {
-        RecordDataTest recordData = new RecordDataTest();
+        RecordDTO recordData = new RecordDataTest();
         recordData.setContent(content);
         recordData.setCreated(created.toString());
         recordData.setModified(modified.toString());
         recordData.setDeleted(deleted);
         recordData.setMimetype(mimetype);
-        recordData.setRecordId( new RecordData.RecordId( bibliographicRecordId, agencyId) );
+        recordData.setRecordId( new RecordIdDTO( bibliographicRecordId, agencyId) );
         return recordData;
     }
 
@@ -232,7 +225,7 @@ public class IndexerTest {
                 + "      </marcx:datafield>\n"
                 + "    </marcx:record>";
 
-        RecordData record = createRecordData("id", 123456, content.getBytes(), created, modified, true, Indexer.MIMETYPE_MARCXCHANGE);
+        RecordDTO record = createRecordData("id", 123456, content.getBytes(), created, modified, true, Indexer.MIMETYPE_MARCXCHANGE);
 
         Indexer indexer = createInstance();
         indexer.worker = new JavaScriptWorker();
@@ -263,7 +256,7 @@ public class IndexerTest {
         Instant modified = new Date(200).toInstant();
         String content = ">hello world<";
 
-        RecordData record = createRecordData("id", 123456, content.getBytes(), created, modified, true, Indexer.MIMETYPE_MARCXCHANGE);
+        RecordDTO record = createRecordData("id", 123456, content.getBytes(), created, modified, true, Indexer.MIMETYPE_MARCXCHANGE);
 
         Indexer indexer = createInstance();
         indexer.worker = new JavaScriptWorker();
@@ -289,7 +282,7 @@ public class IndexerTest {
         Instant modified = new Date(200).toInstant();
         String content = "";
 
-        RecordData record = createRecordData("id", 123456, content.getBytes(), created, modified, true, "DUMMY");
+        RecordDTO record = createRecordData("id", 123456, content.getBytes(), created, modified, true, "DUMMY");
 
         Indexer indexer = createInstance();
         indexer.worker = new JavaScriptWorker();
