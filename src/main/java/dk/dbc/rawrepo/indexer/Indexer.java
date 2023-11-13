@@ -21,7 +21,7 @@ import jakarta.ejb.TransactionAttributeType;
 import jakarta.inject.Inject;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.BaseHttpSolrClient;
-import org.apache.solr.client.solrj.impl.Http2SolrClient;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrInputDocument;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -68,18 +68,21 @@ public class Indexer {
 
     JavaScriptWorker worker;
 
-    private Http2SolrClient solrClient;
+    private HttpSolrClient solrClient;
 
     @PostConstruct
     public void create() {
         LOGGER.info("Initializing with url {}", SOLR_URL);
-        solrClient = new Http2SolrClient.Builder(SOLR_URL).useHttp1_1(true).build();
+        solrClient = new HttpSolrClient.Builder(SOLR_URL).build();
         worker = new JavaScriptWorker();
     }
 
     @PreDestroy
     public void destroy() {
-        solrClient.close();
+        try {
+            solrClient.close();
+        } catch (IOException ignored) {
+        }
     }
 
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)

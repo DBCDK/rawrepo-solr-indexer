@@ -14,7 +14,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.Http2SolrClient;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.ext.XLogger;
 import org.slf4j.ext.XLoggerFactory;
@@ -39,16 +39,19 @@ public class StatusBean implements ServiceStatus {
     @ConfigProperty(name = "SOLR_URL", defaultValue = "SOLR_URL not set")
     protected String SOLR_URL;
 
-    public Http2SolrClient solrClient;
+    public HttpSolrClient solrClient;
 
     @PostConstruct
     public void create() {
-        solrClient = new Http2SolrClient.Builder(SOLR_URL).useHttp1_1(true).build();
+        solrClient = new HttpSolrClient.Builder(SOLR_URL).build();
     }
 
     @PreDestroy
     public void destroy() {
-        solrClient.close();
+        try {
+            solrClient.close();
+        } catch (IOException ignored) {
+        }
     }
 
     boolean isDbAlive() {

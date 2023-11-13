@@ -2,7 +2,7 @@ package dk.dbc.rawrepo.rest;
 
 import jakarta.ws.rs.core.Response;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.Http2SolrClient;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.SolrPingResponse;
 import org.junit.Test;
 
@@ -31,7 +31,7 @@ public class StatusBeanTest {
     public void testStatusSOLRFail() throws IOException, SolrServerException {
         final Response.Status status = Response.Status.OK;
         final StatusBean statusBean = new StatusBean();
-        statusBean.solrClient = mock(Http2SolrClient.class);
+        statusBean.solrClient = mock(HttpSolrClient.class);
         when(statusBean.solrClient.ping()).thenThrow(new SolrServerException("Solr Exception"));
         assertThat(statusBean.isSolrAlive(), is(false));
     }
@@ -40,7 +40,7 @@ public class StatusBeanTest {
     public void testStatusSOLROk() throws IOException, SolrServerException {
         final Response.Status status = Response.Status.OK;
         final StatusBean statusBean = new StatusBean();
-        statusBean.solrClient = mock(Http2SolrClient.class);
+        statusBean.solrClient = mock(HttpSolrClient.class);
         when(statusBean.solrClient.ping()).thenReturn(new SolrPingResponse());
         assertThat(statusBean.isSolrAlive(), is(true));
     }
