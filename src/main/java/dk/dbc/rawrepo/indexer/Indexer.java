@@ -75,7 +75,7 @@ public class Indexer {
         synchronized (Indexer.class) {
             if(solrClient == null) {
                 LOGGER.info("Initializing Solr client for: {}", SOLR_URL);
-                solrClient = new Http2SolrClient.Builder(SOLR_URL).build();
+                solrClient = new Http2SolrClient.Builder(SOLR_URL).useHttp1_1(true).build();
             }
         }
         worker = new JavaScriptWorker();
