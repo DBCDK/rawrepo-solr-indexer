@@ -7,14 +7,13 @@ package dk.dbc.rawrepo.rest;
 
 import dk.dbc.serviceutils.ServiceStatus;
 import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Resource;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.client.solrj.impl.Http2SolrClient;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.ext.XLogger;
 import org.slf4j.ext.XLoggerFactory;
@@ -39,18 +38,12 @@ public class StatusBean implements ServiceStatus {
     @ConfigProperty(name = "SOLR_URL", defaultValue = "SOLR_URL not set")
     protected String SOLR_URL;
 
-    public HttpSolrClient solrClient;
+    public static Http2SolrClient solrClient;
 
     @PostConstruct
     public void create() {
-        solrClient = new HttpSolrClient.Builder(SOLR_URL).build();
-    }
-
-    @PreDestroy
-    public void destroy() {
-        try {
-            solrClient.close();
-        } catch (IOException ignored) {
+        synchronized (StatusBean.class) {
+            if(solrClient == null) solrClient = new Http2SolrClient.Builder(SOLR_URL).build();
         }
     }
 
