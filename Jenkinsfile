@@ -1,6 +1,6 @@
 #!groovy
 
-def workerNode = "devel10"
+def workerNode = "devel10-java11"
 
 void notifyOfBuildStatus(final String buildStatus) {
     final String subject = "${buildStatus}: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
@@ -16,11 +16,6 @@ void notifyOfBuildStatus(final String buildStatus) {
 
 pipeline {
     agent { label workerNode }
-
-    tools {
-        jdk 'jdk11'
-        maven "Maven 3"
-    }
 
     triggers {
         pollSCM("H/03 * * * *")

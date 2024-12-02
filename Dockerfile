@@ -1,4 +1,4 @@
-FROM docker-dbc.artifacts.dbccloud.dk/payara6-micro:latest
+FROM docker-dbc.artifacts.dbccloud.dk/payara6-micro:old-202447
 
 ENV KAFKA_LOG_APPNAME rawrepo-solr-indexer
 
